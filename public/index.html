@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Registration App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">Company Registration System</div>
+            <ul class="nav-menu">
+                <li><a href="#" id="navLogin" class="active">Login</a></li>
+                <li><a href="#" id="navEmployee" style="display:none;">Employee</a></li>
+                <li><a href="#" id="navAdmin" style="display:none;">Admin</a></li>
+                <li><a href="#" id="navLogout" style="display:none;">Logout</a></li>
+            </ul>
+        </nav>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="section active">
+            <div class="card">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <div class="form-footer" style="margin-top: 1rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                    <a href="#" id="showForgotPassword" style="color: #181bc0; text-decoration: none;">Forgot password?</a>
+                    <a href="#" id="showSignup" style="color: #181bc0; text-decoration: none;">Admin Registration</a>
+                </div>
+                <div id="forgotPasswordSection" style="display: none; margin-top: 1.5rem;">
+                    <h3>Forgot Password</h3>
+                    <div class="form-group">
+                        <label for="forgotEmail">Email:</label>
+                        <input type="email" id="forgotEmail" required>
+                    </div>
+                    <button class="btn btn-primary" id="btnForgotPassword">Send Reset Token</button>
+                    <div style="margin-top: 0.75rem;">
+                        <a href="#" id="backToLoginFromForgot" style="color: #2563eb; text-decoration: none;">Back to login</a>
+                    </div>
+                    <div id="forgotPasswordMessage" style="margin-top: 0.75rem; color: #065f46;"></div>
+                </div>
+                <div id="resetPasswordSection" style="display: none; margin-top: 1.5rem;">
+                    <h3>Reset Password</h3>
+                    <div class="form-group">
+                        <label for="resetToken">Reset Token:</label>
+                        <input type="text" id="resetToken" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="resetPassword">New Password:</label>
+                        <input type="password" id="resetPassword" required>
+                    </div>
+                    <button class="btn btn-primary" id="btnResetPassword">Reset Password</button>
+                    <div style="margin-top: 0.75rem;">
+                        <a href="#" id="backToLoginFromReset" style="color: #2563eb; text-decoration: none;">Back to login</a>
+                    </div>
+                    <div id="resetPasswordMessage" style="margin-top: 0.75rem; color: #065f46;"></div>
+                </div>
+                <div id="signupSection" style="display: none; margin-top: 1.5rem;">
+                    <h3>Create First Admin</h3>
+                    <form id="signupForm">
+                        <div class="form-group">
+                            <label for="signupName">Name:</label>
+                            <input type="text" id="signupName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signupEmail">Email:</label>
+                            <input type="email" id="signupEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signupPassword">Password:</label>
+                            <input type="password" id="signupPassword" required>
+                        </div>
+                        <button class="btn btn-primary" id="btnSignup">Create Admin</button>
+                    </form>
+                    <div style="margin-top: 0.75rem;">
+                        <a href="#" id="backToLoginFromSignup" style="color: #2563eb; text-decoration: none;">Back to login</a>
+                    </div>
+                    <div id="signupMessage" style="margin-top: 0.75rem; color: #065f46;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Section -->
+        <div id="employeeSection" class="section">
+            <div class="card">
+                <h2>Welcome, <span id="employeeName"></span></h2>
+                <div class="clock-container">
+                    <div id="currentTime" class="current-time"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-success" id="btnClockIn">Clock In</button>
+                    <button class="btn btn-danger" id="btnClockOut">Clock Out</button>
+                </div>
+                <div class="break-options">
+                    <h3>Take a Break:</h3>
+                    <button class="btn btn-secondary" id="btnTea">Tea Break</button>
+                    <button class="btn btn-secondary" id="btnLunch">Lunch Break</button>
+                    <button class="btn btn-secondary" id="btnClientVisit">Client Visit</button>
+                    <button class="btn btn-secondary" id="btnSafetyDrill">Safety Drill</button>
+                </div>
+                <div class="history">
+                    <h3>Today's History:</h3>
+                    <div id="attendanceHistory" class="history-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Section -->
+        <div id="adminSection" class="section">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <h2>Admin Dashboard</h2>
+                    <div id="adminCompanyName" style="font-weight: 600; color: #333;">Company: <span id="companyName">Unknown</span></div>
+                </div>
+                <div class="admin-tabs">
+                    <button class="tab-button active" data-tab="employees">Employees</button>
+                    <button class="tab-button" data-tab="attendance">Attendance</button>
+                    <button class="tab-button" data-tab="audit">Audit Log</button>
+                    <button class="tab-button" data-tab="archive">Archive History</button>
+                    <button class="tab-button" data-tab="addEmployee">Add Employee</button>
+                </div>
+
+                <!-- Employees Tab -->
+                <div id="employeesTab" class="tab-content active">
+                    <div class="section-header">
+                        <h3>Employee List</h3>
+                        <button class="btn btn-secondary" id="btnExportExcel">📥 Export to Excel</button>
+                    </div>
+                    <div class="search-row">
+                        <input type="text" id="employeeSearch" placeholder="Search employees by name or email" />
+                    </div>
+                    <div id="employeeList" class="employee-list"></div>
+                </div>
+
+                <!-- Attendance Records Tab -->
+                <div id="attendanceTab" class="tab-content">
+                    <div class="section-header">
+                        <h3>Attendance Records</h3>
+                        <button class="btn btn-secondary" id="btnRefreshAttendance">Refresh</button>
+                    </div>
+                    <div class="filter-row">
+                        <input type="date" id="attendanceDateFilter" />
+                        <button class="btn btn-secondary" id="btnLoadAttendanceRecords">Load</button>
+                    </div>
+                    <div id="attendanceRecords" class="attendance-list"></div>
+                </div>
+
+                <!-- Audit Log Tab -->
+                <div id="auditTab" class="tab-content">
+                    <div class="section-header">
+                        <h3>Audit Trail</h3>
+                        <div style="display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap;">
+                            <input type="month" id="auditMonth" />
+                            <button class="btn btn-secondary" id="btnLoadAuditMonth">Load</button>
+                            <button class="btn btn-secondary" id="btnExportAuditLog">📥 Export to Excel</button>
+                        </div>
+                    </div>
+                    <div id="auditLog" class="audit-log"></div>
+                </div>
+
+                <!-- Archive History Tab -->
+                <div id="archiveTab" class="tab-content">
+                    <div class="section-header">
+                        <h3>Archived Audit History</h3>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <input type="month" id="archiveMonth" />
+                            <button class="btn btn-secondary" id="btnLoadArchiveHistory">Load</button>
+                            <button class="btn btn-secondary" id="btnArchiveNow">Archive Now</button>
+                        </div>
+                    </div>
+                    <div id="archiveLog" class="audit-log"></div>
+                </div>
+
+                <!-- Add Employee Tab -->
+                <div id="addEmployeeTab" class="tab-content">
+                    <h3>Add New Employee</h3>
+                    <form id="addEmployeeForm">
+                        <div class="form-group">
+                            <label for="newEmployeeName">Name:</label>
+                            <input type="text" id="newEmployeeName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newEmployeeEmail">Email:</label>
+                            <input type="email" id="newEmployeeEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newEmployeeRole">Role:</label>
+                            <select id="newEmployeeRole" required>
+                                <option value="employee" selected>Employee</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="newEmployeePassword">Password:</label>
+                            <input type="password" id="newEmployeePassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Employee</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="vendor/xlsx.min.js"></script>
+</body>
+</html>
