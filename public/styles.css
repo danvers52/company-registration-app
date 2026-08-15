@@ -1,0 +1,381 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Navbar */
+.navbar {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    color: white;
+}
+
+.nav-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-menu {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+}
+
+.nav-menu a#navLogout:hover,
+.nav-menu a.active#navLogout {
+    background-color: #d40000;
+}
+
+.nav-menu a#navAdmin.active,
+.nav-menu a#navEmployee.active {
+    background-color: #4abb48;
+}
+
+/* Sections */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Cards */
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+}
+
+.card h2 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.card h3 {
+    color: #555;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.3rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    margin: 0.5rem;
+}
+
+#auditTab > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.btn-primary {
+    background-color: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #5568d3;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background-color: #7ad78b;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #00d828;
+}
+
+.btn-danger {
+    background-color: #fd8383;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc1010;
+}
+
+.btn-secondary {
+    background-color: #cbd5e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #8d99a8;
+}
+
+.button-group {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/* Clock Container */
+.clock-container {
+    text-align: center;
+    padding: 2rem;
+    background-color: #f7fafc;
+    border-radius: 10px;
+    margin: 1rem 0;
+}
+
+.current-time {
+    font-size: 3rem;
+    color: #667eea;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+/* Break Options */
+.break-options {
+    background-color: #edf2f7;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin: 1.5rem 0;
+}
+
+.break-options h3 {
+    margin-top: 0;
+}
+
+/* History */
+.history {
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #f7fafc;
+    border-radius: 10px;
+}
+
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 0.75rem;
+    background-color: white;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid #667eea;
+    padding-left: 1rem;
+}
+
+/* Admin Tabs */
+.admin-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #667;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab-button.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Employee List */
+.employee-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.employee-card {
+    background-color: #f7fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.employee-card h4 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.employee-card p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Audit Log */
+.audit-log {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.audit-entry {
+    padding: 0.75rem;
+    background-color: #f7fafc;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    border-left: 4px solid #48bb78;
+}
+
+.audit-entry .timestamp {
+    color: #667eea;
+    font-weight: bold;
+}
+
+.audit-entry .action {
+    color: #666;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.search-row,
+.filter-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.search-row input,
+.filter-row input {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 280px;
+    min-width: 220px;
+}
+
+.attendance-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.attendance-item {
+    padding: 0.9rem;
+    background-color: #f7fafc;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid #667eea;
+}
+
+.attendance-item h4 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.attendance-item p {
+    color: #555;
+    margin-bottom: 0.35rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .nav-menu {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .current-time {
+        font-size: 2rem;
+    }
+
+    .break-options button {
+        display: block;
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+
+    .employee-list {
+        grid-template-columns: 1fr;
+    }
+}
