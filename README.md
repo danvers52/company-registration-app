@@ -8,6 +8,7 @@ A tenant-aware employee attendance and admin dashboard application built with No
 - Attendance history and date filtering
 - Admin employee management
 - Audit log tracking and export support
+- Archival support and selecting
 - Tenant-aware authorization with `Company` model
 - Security hardening with Helmet, CORS, rate limiting, and input sanitization
 
