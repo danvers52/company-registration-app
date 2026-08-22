@@ -23,7 +23,7 @@ if (Number.isNaN(BCRYPT_SALT_ROUNDS) || BCRYPT_SALT_ROUNDS < 10) {
 }
 
 module.exports = {
-  jwtSecret: JWT_SECRET || 'change_this_to_a_secure_key',
+  jwtSecret: JWT_SECRET || 'k2xD8qxpeV8PU9uYgBQq8YMeG8t3oSoN',
   jwtExpiresIn: JWT_EXPIRES_IN,
   mongoUri: MONGODB_URI,
   port: Number(PORT),

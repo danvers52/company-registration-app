@@ -622,6 +622,7 @@ function renderEmployeeList(employees) {
     });
 }
 
+// Handle Employee Search
 function handleEmployeeSearch(event) {
     const query = event.target.value.toLowerCase().trim();
     if (!query) {
@@ -637,11 +638,34 @@ function handleEmployeeSearch(event) {
     renderEmployeeList(filtered);
 }
 
+// View button for employee details
 function viewEmployeeDetails(employeeId) {
     const employee = allEmployees.find(emp => emp._id === employeeId || emp.id === employeeId);
     if (!employee) return;
 
     alert(`Name: ${employee.name}\nEmail: ${employee.email}\nRole: ${employee.role}`);
+}
+
+// Handle Delete Employee
+async function deleteEmployee(employeeId) {
+    if (!confirm('Are you sure you want to remove this employee?')) {
+        return;
+    }
+    
+    try {
+        const response = await authFetch(`/api/employees/${employeeId}`, {
+            method: 'DELETE',
+        });
+        
+        if (response.ok) {
+            alert('Employee removed successfully');
+            loadEmployeeList();
+        } else {
+            alert('Failed to remove employee');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+    }
 }
 
 async function loadAttendanceRecords() {
@@ -722,6 +746,7 @@ async function loadAuditLog() {
     }
 }
 
+//Button for 'Archive Now' action
 async function triggerArchiveNow() {
     try {
         const response = await authFetch('/api/employees/audit/archive/trigger', {
@@ -742,6 +767,7 @@ async function triggerArchiveNow() {
     }
 }
 
+//Load all Archive History
 async function loadArchiveHistory() {
     try {
         const month = archiveMonthInput?.value;
@@ -816,28 +842,6 @@ async function handleAddEmployee(e) {
     } catch (error) {
         console.error('Add employee error:', error);
         alert('Error adding employee');
-    }
-}
-
-// Delete Employee
-async function deleteEmployee(employeeId) {
-    if (!confirm('Are you sure you want to remove this employee?')) {
-        return;
-    }
-    
-    try {
-        const response = await authFetch(`/api/employees/${employeeId}`, {
-            method: 'DELETE',
-        });
-        
-        if (response.ok) {
-            alert('Employee removed successfully');
-            loadEmployeeList();
-        } else {
-            alert('Failed to remove employee');
-        }
-    } catch (error) {
-        console.error('Delete error:', error);
     }
 }
 
