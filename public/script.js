@@ -111,11 +111,24 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         handleLogout();
     });
+
+    //Employee card listeners for CSP safety
+    document.getElementById('employeeList')?.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.classList.contains('view-btn')) {
+            const employeeId = target.dataset.id;
+            viewEmployeeDetails(employeeId);
+        }
+        if (target.classList.contains('delete-btn')) {
+            const employeeId = target.dataset.id;
+            deleteEmployee(employeeId);
+        }
+    });    
     
     // Load current user if already logged in
     loadCurrentUser();
     
-    // Clock buttons
+    // Clock buttons for Employees
     document.getElementById('btnClockIn').addEventListener('click', () => recordAttendance('clock-in'));
     document.getElementById('btnClockOut').addEventListener('click', () => recordAttendance('clock-out'));
     document.getElementById('btnTea').addEventListener('click', () => toggleBreak('tea'));
@@ -141,18 +154,22 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExportAuditLog.addEventListener('click', exportAuditLogToExcel);
     }
 
+    //Load the Audit Month
     if (btnLoadAuditMonth) {
         btnLoadAuditMonth.addEventListener('click', () => loadAuditLog());
     }
 
+    //Load Archives
     if (btnLoadArchiveHistory) {
         btnLoadArchiveHistory.addEventListener('click', () => loadArchiveHistory());
     }
 
+    //Archive data now
     if (btnArchiveNow) {
         btnArchiveNow.addEventListener('click', triggerArchiveNow);
     }
 
+    //Month inputs for previous records
     if (archiveMonthInput) {
         archiveMonthInput.value = new Date().toISOString().slice(0, 7);
     }
@@ -357,6 +374,7 @@ async function loadCurrentUser() {
     }
 }
 
+//Logic for reseting passwords
 function toggleForgotPassword(showReset) {
     const forgotSection = document.getElementById('forgotPasswordSection');
     const resetSection = document.getElementById('resetPasswordSection');
@@ -614,8 +632,8 @@ function renderEmployeeList(employees) {
             <p><strong>Email:</strong> ${emp.email}</p>
             <p><strong>Role:</strong> ${emp.role}</p>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
-                <button class="btn btn-secondary" onclick="viewEmployeeDetails('${employeeId}')">View</button>
-                <button class="btn btn-danger" onclick="deleteEmployee('${employeeId}')">Remove</button>
+                <button class="btn btn-secondary view-btn" data-id="${employeeId}">View</button>
+                <button class="btn btn-danger delete-btn" data-id="${employeeId}">Remove</button>
             </div>
         `;
         employeeList.appendChild(card);
