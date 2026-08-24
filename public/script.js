@@ -2,28 +2,30 @@
 let currentUser = null;
 
 // DOM Elements
-const loginSection = document.getElementById('loginSection');
-const employeeSection = document.getElementById('employeeSection');
-const adminSection = document.getElementById('adminSection');
+if (typeof document !== 'undefined') {
+    const loginSection = document.getElementById('loginSection');
+    const employeeSection = document.getElementById('employeeSection');
+    const adminSection = document.getElementById('adminSection');
 
-const navLogin = document.getElementById('navLogin');
-const navEmployee = document.getElementById('navEmployee');
-const navAdmin = document.getElementById('navAdmin');
-const navLogout = document.getElementById('navLogout');
+    const navLogin = document.getElementById('navLogin');
+    const navEmployee = document.getElementById('navEmployee');
+    const navAdmin = document.getElementById('navAdmin');
+    const navLogout = document.getElementById('navLogout');
 
-const loginForm = document.getElementById('loginForm');
-const addEmployeeForm = document.getElementById('addEmployeeForm');
-const btnExportExcel = document.getElementById('btnExportExcel');
-const btnExportAuditLog = document.getElementById('btnExportAuditLog');
-const btnLoadAuditMonth = document.getElementById('btnLoadAuditMonth');
-const btnLoadArchiveHistory = document.getElementById('btnLoadArchiveHistory');
-const btnArchiveNow = document.getElementById('btnArchiveNow');
-const auditMonthInput = document.getElementById('auditMonth');
-const archiveMonthInput = document.getElementById('archiveMonth');
-const btnRefreshAttendance = document.getElementById('btnRefreshAttendance');
-const btnLoadAttendanceRecords = document.getElementById('btnLoadAttendanceRecords');
-const attendanceDateFilter = document.getElementById('attendanceDateFilter');
-const attendanceRecordsContainer = document.getElementById('attendanceRecords');
+    const loginForm = document.getElementById('loginForm');
+    const addEmployeeForm = document.getElementById('addEmployeeForm');
+    const btnExportExcel = document.getElementById('btnExportExcel');
+    const btnExportAuditLog = document.getElementById('btnExportAuditLog');
+    const btnLoadAuditMonth = document.getElementById('btnLoadAuditMonth');
+    const btnLoadArchiveHistory = document.getElementById('btnLoadArchiveHistory');
+    const btnArchiveNow = document.getElementById('btnArchiveNow');
+    const auditMonthInput = document.getElementById('auditMonth');
+    const archiveMonthInput = document.getElementById('archiveMonth');
+    const btnRefreshAttendance = document.getElementById('btnRefreshAttendance');
+    const btnLoadAttendanceRecords = document.getElementById('btnLoadAttendanceRecords');
+    const attendanceDateFilter = document.getElementById('attendanceDateFilter');
+    const attendanceRecordsContainer = document.getElementById('attendanceRecords');
+}
 
 // Tab buttons
 const tabButtons = document.querySelectorAll('.tab-button');
@@ -113,18 +115,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     //Employee card listeners for CSP safety
-    document.getElementById('employeeList')?.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target.classList.contains('view-btn')) {
-            const employeeId = target.dataset.id;
-            viewEmployeeDetails(employeeId);
-        }
-        if (target.classList.contains('delete-btn')) {
-            const employeeId = target.dataset.id;
-            deleteEmployee(employeeId);
-        }
-    });    
-    
+    if(typeof document !== 'undefined') {
+        document.getElementById('employeeList')?.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('view-btn')) {
+                const employeeId = target.dataset.id;
+                viewEmployeeDetails(employeeId);
+            }
+            if (target.classList.contains('delete-btn')) {
+                const employeeId = target.dataset.id;
+                deleteEmployee(employeeId);
+            }
+        });   
+    }
     // Load current user if already logged in
     loadCurrentUser();
     
@@ -974,4 +977,8 @@ async function exportAuditLogToExcel() {
         console.error('Audit log export error:', error);
         alert(error.message || 'Failed to export audit log');
     }
+}
+// Export functions for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { deleteEmployee, viewEmployeeDetails }; 
 }
