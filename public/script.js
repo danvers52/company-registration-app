@@ -2,7 +2,6 @@
 let currentUser = null;
 
 // DOM Elements
-if (typeof document !== 'undefined') {
     const loginSection = document.getElementById('loginSection');
     const employeeSection = document.getElementById('employeeSection');
     const adminSection = document.getElementById('adminSection');
@@ -25,7 +24,6 @@ if (typeof document !== 'undefined') {
     const btnLoadAttendanceRecords = document.getElementById('btnLoadAttendanceRecords');
     const attendanceDateFilter = document.getElementById('attendanceDateFilter');
     const attendanceRecordsContainer = document.getElementById('attendanceRecords');
-}
 
 // Tab buttons
 const tabButtons = document.querySelectorAll('.tab-button');
