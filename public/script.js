@@ -261,6 +261,7 @@ async function handleLogin(e) {
             loginForm.reset();
         } else {
             alert('Invalid credentials');
+            loginForm.reset();
         }
     } catch (error) {
         console.error('Login error:', error);
