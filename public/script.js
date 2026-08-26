@@ -25,6 +25,7 @@ let currentUser = null;
     const attendanceDateFilter = document.getElementById('attendanceDateFilter');
     const attendanceRecordsContainer = document.getElementById('attendanceRecords');
 
+
 // Tab buttons
 const tabButtons = document.querySelectorAll('.tab-button');
 const breakButtons = {
@@ -366,11 +367,12 @@ async function loadCurrentUser() {
     if (!token) return;
     try {
         const response = await authFetch('/api/auth/me');
+        if (!response.ok) throw new Error('Failed to load current user');
+
         const data = await response.json();
         currentUser = data;
-        updateCurrentUserUI();
     } catch (error) {
-        console.warn('loadCurrentUser failed:', error);
+        console.warn('Loading the user failed:', error);
         localStorage.removeItem('token');
     }
 }
