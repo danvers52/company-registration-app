@@ -259,12 +259,16 @@ async function handleLogin(e) {
             localStorage.setItem('token', data.token);
             updateCurrentUserUI();
             loginForm.reset();
+            //account not found
+        } else if (response.status === 404) {
+            message('User account not found.');
+            //wrong account details
         } else {
             alert('Invalid credentials');
             passwordInput.value = '';
             passwordInput.focus();
             emailInput.focus();
-            return;
+            return;            
         }
     } catch (error) {
         console.error('Login error:', error);
