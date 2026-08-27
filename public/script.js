@@ -261,7 +261,10 @@ async function handleLogin(e) {
             loginForm.reset();
         } else {
             alert('Invalid credentials');
-            loginForm.reset();
+            passwordInput.value = '';
+            passwordInput.focus();
+            emailInput.focus();
+            return;
         }
     } catch (error) {
         console.error('Login error:', error);
