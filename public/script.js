@@ -237,42 +237,72 @@ async function toggleBreak(breakType) {
     alert(`${label} ${isEnding ? 'ended' : 'started'} successfully`);
 }
 
+//message helper
+function message(text, type = 'error') {
+	const msgBox = document.getElementById('loginMessage');
+	
+	if (!msgBox) return;
+	msgBox.textContent = text;
+	
+	//Style based on type
+	if (type === 'success') {
+		msgBox.style.color = '#065f46'; //green
+		
+	} else if (type === 'warning'){
+		msgBox.style.color = '#b45309'; //amber
+		
+	} else {
+		msgBox.style.color = '#b91c1c'; //red
+	}
+}
+
 // Handle Login
 async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+	const emailInput = document.getElementById('email');
+	const passwordInput = document.getElementById('password');
+    const email = emailInput.value;
+    const password = passwordInput.value;
     
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email, password })
         });
         
+        console.log('Response status:', response.status);
         if (response.ok) {
             const data = await response.json();
             currentUser = data.user;
             localStorage.setItem('token', data.token);
             updateCurrentUserUI();
             loginForm.reset();
+			
             //account not found
         } else if (response.status === 404) {
-            message('User account not found.');
+            message('User account does not exist. Please create or advise your admin first', 'error');
+			emailInput.focus();
+			
             //wrong account details
-        } else {
-            alert('Invalid credentials');
-            passwordInput.value = '';
-            passwordInput.focus();
-            emailInput.focus();
-            return;            
-        }
+        } else if (response.status === 401) {
+            message('Invalid Credentials. Please try again', 'error');
+			passwordInput.value = '';
+			passwordInput.focus();
+			
+			//Inactive account
+        } else if (response.status === 403) {
+			message('Your account is inactive. Contact your administrator', 'warning');
+			
+			//Other errors
+		} else {
+			alert('Login failed. Please try again later', 'error');
+		}
+		
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed. Server may not be running.');
+        alert('Login failed. Server may not be running.', 'warning');
     }
 }
 
