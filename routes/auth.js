@@ -178,20 +178,24 @@ router.post('/login', async (req, res) => {
       return sendError(res, 400, 'Email and password are required');
     }
 
+	//1. Find the employee by email
+	const employee = await Employee.findOne({email: email.trim().toLowerCase()}).populate('company', 'name');
+	if(!employee) {
+		return sendError(res, 404, 'User account does not exist');
+	}
+	
+	//2. Check password
     const isPasswordValid = await employee.comparePassword(password);
     if (!isPasswordValid) {
       return sendError(res, 401, 'Invalid credentials');
     }
 
-    const employee = await employee.findOne({ email: email.trim().toLowerCase() }).populate('company', 'name');
-    if (!employee) {
-      return sendError(res, 404, 'User account does not exist');
-    }
-
+	//3. Check active status
     if (!employee.isActive) {
       return sendError(res, 403, 'Account is inactive');
     }
-
+	
+	//4. Generate the token
     const token = jwt.sign(
       { id: employee._id, email: employee.email, role: employee.role, companyId: employee.company?._id || employee.company },
       jwtSecret,
