@@ -5,7 +5,7 @@ dotenv.config();
 const NODE_ENV = process.env.NODE_ENV?.trim() || 'development';
 const JWT_SECRET = process.env.JWT_SECRET?.trim();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN?.trim() || '24h';
-const MONGODB_URI = process.env.MONGODB_URI?.trim() || 'mongodb://mongo:27017/company-registration';
+const MONGODB_URI = process.env.MONGODB_URI?.trim() || 'mongodb://localhost:27017/company-registration';
 const PORT = process.env.PORT?.trim() || '5000';
 const CORS_ORIGIN = process.env.CORS_ORIGIN?.trim() || 'http://localhost:5000';
 const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
