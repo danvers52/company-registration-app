@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import Employee from '../models/Employee.js';
 import AuditLog from '../models/AuditLog.js';
+import config from '../utils/config.js';
+
+const { jwtSecret, jwtExpiresIn } = config;
 
 import {
   isValidEmail,
@@ -12,7 +15,6 @@ import {
   sendError
 } from '../utils/validators.js';
 
-import { jwtSecret, jwtExpiresIn } from '../utils/config.js';
 import {
   getEmailDomain,
   resolveCompanyByEmail,
