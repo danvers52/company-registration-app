@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const companySchema = new mongoose.Schema({
   name: {
@@ -31,4 +31,5 @@ const companySchema = new mongoose.Schema({
 companySchema.index({ isActive: 1 });
 companySchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model('Company', companySchema);
+const Company = mongoose.model('Company', companySchema);
+export default Company;
