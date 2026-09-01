@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const { bcryptSaltRounds } = require('../utils/config');
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import { bcryptSaltRounds } from '../utils/config.js';
 
 const employeeSchema = new mongoose.Schema({
   name: {
@@ -60,10 +60,12 @@ employeeSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
+const Employee = mongoose.model('Employee', employeeSchema);
+
 // Database indexes for performance
 employeeSchema.index({ company: 1 });
 employeeSchema.index({ createdAt: -1 });
 employeeSchema.index({ email: 1 });
 employeeSchema.index({ isActive: 1 });
 
-module.exports = mongoose.model('Employee', employeeSchema);
+export default Employee;

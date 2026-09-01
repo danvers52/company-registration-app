@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const auditLogSchema = new mongoose.Schema({
   employeeId: {
@@ -26,6 +26,8 @@ const auditLogSchema = new mongoose.Schema({
   userAgent: String,
 });
 
+const AuditLog = mongoose.model('AuditLog', auditLogSchema);
+
 // Database indexes for performance
 auditLogSchema.index({ employeeId: 1 });
 auditLogSchema.index({ timestamp: -1 });
@@ -34,4 +36,4 @@ auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ employeeId: 1, timestamp: -1 });
 auditLogSchema.index({ timestamp: -1, action: 1 });
 
-module.exports = mongoose.model('AuditLog', auditLogSchema);
+export default AuditLog;

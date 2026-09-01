@@ -1,24 +1,28 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const Employee = require('../models/Employee');
-const AuditLog = require('../models/AuditLog');
-const {
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import Employee from '../models/Employee.js';
+import AuditLog from '../models/AuditLog.js';
+
+import {
   isValidEmail,
   isValidPassword,
   isValidRole,
   isNonEmptyString,
-  sendError,
-} = require('../utils/validators');
-const { jwtSecret, jwtExpiresIn } = require('../utils/config');
-const {
+  sendError
+} from '../utils/validators.js';
+
+import { jwtSecret, jwtExpiresIn } from '../utils/config.js';
+import {
   getEmailDomain,
   resolveCompanyByEmail,
   ensureCompanyByEmail,
-  requireCompanyForRequest,
-} = require('../utils/tenant');
+  requireCompanyForRequest
+} from '../utils/tenant.js';
 
+// routes/auth.js
 const router = express.Router();
+export default router;
 
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
@@ -333,5 +337,3 @@ router.post('/logout', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-module.exports = router;
