@@ -44,6 +44,12 @@ const employeeSchema = new mongoose.Schema({
   },
 });
 
+// Database indexes for performance
+employeeSchema.index({ company: 1 });
+employeeSchema.index({ createdAt: -1 });
+employeeSchema.index({ email: 1 });
+employeeSchema.index({ isActive: 1 });
+
 // Hash password before saving
 employeeSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
@@ -61,11 +67,5 @@ employeeSchema.methods.comparePassword = async function (password) {
 };
 
 const Employee = mongoose.model('Employee', employeeSchema);
-
-// Database indexes for performance
-employeeSchema.index({ company: 1 });
-employeeSchema.index({ createdAt: -1 });
-employeeSchema.index({ email: 1 });
-employeeSchema.index({ isActive: 1 });
 
 export default Employee;
