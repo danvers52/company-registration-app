@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import { bcryptSaltRounds } from '../utils/config.js';
+import config from '../utils/config.js';
+
+const {bcryptSaltRounds} = config;
 
 const employeeSchema = new mongoose.Schema({
   name: {
