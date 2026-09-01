@@ -1,4 +1,4 @@
-const dotenv = require('dotenv');
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -22,7 +22,7 @@ if (Number.isNaN(BCRYPT_SALT_ROUNDS) || BCRYPT_SALT_ROUNDS < 10) {
   throw new Error('BCRYPT_SALT_ROUNDS must be a number greater than or equal to 10.');
 }
 
-module.exports = {
+export default {
   jwtSecret: JWT_SECRET || 'k2xD8qxpeV8PU9uYgBQq8YMeG8t3oSoN',
   jwtExpiresIn: JWT_EXPIRES_IN,
   mongoUri: MONGODB_URI,
