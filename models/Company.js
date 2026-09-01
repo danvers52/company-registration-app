@@ -27,4 +27,8 @@ const companySchema = new mongoose.Schema({
   },
 });
 
+// Database indexes for performance
+companySchema.index({ isActive: 1 });
+companySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Company', companySchema);

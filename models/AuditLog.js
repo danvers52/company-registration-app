@@ -26,4 +26,12 @@ const auditLogSchema = new mongoose.Schema({
   userAgent: String,
 });
 
+// Database indexes for performance
+auditLogSchema.index({ employeeId: 1 });
+auditLogSchema.index({ timestamp: -1 });
+auditLogSchema.index({ action: 1 });
+auditLogSchema.index({ createdAt: -1 });
+auditLogSchema.index({ employeeId: 1, timestamp: -1 });
+auditLogSchema.index({ timestamp: -1, action: 1 });
+
 module.exports = mongoose.model('AuditLog', auditLogSchema);

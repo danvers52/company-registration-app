@@ -60,4 +60,10 @@ employeeSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
+// Database indexes for performance
+employeeSchema.index({ company: 1 });
+employeeSchema.index({ createdAt: -1 });
+employeeSchema.index({ email: 1 });
+employeeSchema.index({ isActive: 1 });
+
 module.exports = mongoose.model('Employee', employeeSchema);
