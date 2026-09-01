@@ -8,7 +8,22 @@ services:
       - mongo
     environment:
       - MONGO_URI=mongodb://mongo:27017/company-registration
+    command: npm start
+
+  test:
+    build: .
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/company-registration
+    command: npm test
+
   mongo:
     image: mongo:6
     ports:
       - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
