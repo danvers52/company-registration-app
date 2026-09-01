@@ -39,7 +39,7 @@ app.use(globalRateLimiter);
 app.use('/api/auth', authRateLimiter);
 
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/company-registration', {
+mongoose.connect('mongodb://mongo:27017/company-registration', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
