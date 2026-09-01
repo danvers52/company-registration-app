@@ -16,17 +16,40 @@ A tenant-aware employee attendance and admin dashboard application built with No
 
 ### Prerequisites
 
+Choose one of the following setup options:
+
+**Option 1: Local Development**
 - Node.js 18 or later
 - npm 10 or later
 - MongoDB running locally or accessible remotely
 
+**Option 2: Docker (Recommended)**
+- Docker 20.10 or later
+- Docker Compose 2.0 or later
+
 ### Install Dependencies
+
+**For Local Development:**
 
 ```bash
 npm install
 ```
 
+**For Docker Setup:**
+
+No local installation needed. Docker handles all dependencies.
+
+### Quick Start with Docker
+
+```bash
+docker-compose up
+```
+
+The app will be available at `http://localhost:5000`
+
 ### Environment Setup
+
+**For Local Development:**
 
 Copy the example environment file:
 
@@ -46,7 +69,13 @@ BCRYPT_SALT_ROUNDS=12
 NODE_ENV=development
 ```
 
+**For Docker:**
+
+Docker Compose automatically sets the MongoDB connection string. Customize other variables by creating a `.env` file or modifying the `docker-compose.yml`.
+
 ### Run the App
+
+**Local Development:**
 
 Start the server:
 
@@ -60,6 +89,32 @@ For development with auto-reload:
 npm run dev
 ```
 
+**Docker Setup:**
+
+Start all services (app + MongoDB):
+
+```bash
+docker-compose up
+```
+
+For detached mode (background):
+
+```bash
+docker-compose up -d
+```
+
+Stop services:
+
+```bash
+docker-compose down
+```
+
+View logs:
+
+```bash
+docker-compose logs -f app
+```
+
 Open the app in your browser:
 
 ```text
@@ -68,8 +123,17 @@ http://localhost:5000
 
 ## Scripts
 
+### npm Scripts
 - `npm start` — start the server
 - `npm run dev` — start with nodemon
+- `npm test` — run tests with Jest
+
+### Docker Commands
+- `docker-compose up` — start app and MongoDB
+- `docker-compose up -d` — start in background
+- `docker-compose down` — stop and remove containers
+- `docker-compose logs -f` — view logs in real-time
+- `docker-compose ps` — list running containers
 
 ## API Endpoints
 
