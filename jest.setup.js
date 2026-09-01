@@ -1,7 +1,11 @@
-const {TextEncoder, TextDecoder} = require('util');
+import { TextEncoder, TextDecoder } from 'util';
+import dotenv from 'dotenv';
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-global.alert=jest.fn();
-global.confirm=jest.fn(() => true);
+// Simple stubs instead of jest.fn()
+global.alert = () => {};
+global.confirm = () => true;
+
+dotenv.config({ path: '.env.test' });
