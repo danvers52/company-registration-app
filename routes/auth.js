@@ -117,7 +117,7 @@ async function hasAdminForCompany(companyId) {
 // Signup for first admin per company domain only
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
     if (!isNonEmptyString(name)) {
       return sendError(res, 400, 'Name is required');
     }
@@ -126,6 +126,9 @@ router.post('/signup', async (req, res) => {
     }
     if (!isValidPassword(password)) {
       return sendError(res, 400, 'Password must be at least 8 characters long');
+    }
+    if (role !== undefined && role !== 'admin') {
+      return sendError(res, 400, 'Role is fixed to admin for company signup');
     }
 
     const employeeCompany = await ensureCompanyByEmail(email);
