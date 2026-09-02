@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "keywords": [
     "attendance",
@@ -31,6 +31,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "jest": "^30.5.1",
     "jest-environment-jsdom": "^30.4.1",
     "jsdom": "^29.1.1",
