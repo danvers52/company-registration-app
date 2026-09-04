@@ -25,14 +25,9 @@ import employeeRoutes from './routes/employees.js';
 import attendanceRoutes from './routes/attendance.js';
 import exportRoutes from './routes/export.js';
 
-//express app
-export const app = express();
-
-// mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/employees', employeeRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/export', exportRoutes);
+//express app & parsing json
+const app = express();
+app.use(express.json());
 
 // Security middleware
 app.disable('x-powered-by');
@@ -44,24 +39,47 @@ app.use(hpp());
 app.use(mongoSanitize());
 app.use(express.static('public'));
 
+app.get('/', (req, res) => {
+  console.log('Employee route hit:', req.user);
+  res.json({message: 'Employee route works'});
+});
+
+//Rate Limiters
+//Global API limiter:
 const globalRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
+  windowMs: 15 * 60 * 1000, //15 minutes
+  max: 200, //200 requests per window
+  message: { error: 'More than 200 resquests occurred, please try again later after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests, please try again later.' },
+
 });
 
+//Login limiter:
 const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+  windowMs: 10 * 60 * 1000, //10 minutes
+  max: 5, //5 login attempt per window
+  message: { error: 'More than 5 login attempts occurred, please try again later after 10 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many authentication attempts, please try again later.' },
 });
 
+const exportRateLimiter = rateLimit ({
+  windowMs: 15 * 60 * 1000, //15 minutes
+  max: 10, //10 export requests per window
+  message: {error: 'More than 10 export requests occurred, please try again later after 15 minutes.'},
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+//rate limiters AFTER express.json
+// mount remaining routes
 app.use(globalRateLimiter);
-app.use('/api/auth', authRateLimiter);
+app.use('/api/employees', globalRateLimiter, employeeRoutes);
+app.use('/api/attendance', globalRateLimiter, attendanceRoutes);
+
+app.use('/api/auth', authRateLimiter, authRoutes);
+app.use('/api/export', exportRateLimiter, exportRoutes);
 
 // Validate required environment variables on startup
 export const validateEnvironment = () => {
@@ -216,7 +234,8 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-export const server = app.listen(config.port, () => {
+//Start server
+const server = app.listen(config.port, () => {
   console.log(`✓ Server running on http://localhost:${config.port}`);
   console.log(`✓ Environment: ${config.env}`);
   console.log(`✓ Health check: GET /api/health`);
@@ -233,9 +252,4 @@ server.on('error', (err) => {
   }
 });
 
-export default {
-  mongoUri: process.env.MONGODB_URI || 'mongodb://mongo:27017/company_registration',
-  port: process.env.PORT || 5000,
-  corsOrigin: process.env.CORS_ORIGIN || '*',
-  environment: process.env.NODE_ENV || 'development',
-};
+export default app;
