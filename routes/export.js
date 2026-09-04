@@ -1,19 +1,22 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const XLSX = require('xlsx');
-const Employee = require('../models/Employee');
-const AuditLog = require('../models/AuditLog');
-const { getAuditLogsForMonth } = require('../utils/auditArchival');
-const { jwtSecret } = require('../utils/config');
-const { requireCompanyForRequest } = require('../utils/tenant');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import XLSX from 'xlsx';
+import Employee from '../models/Employee.js';
+import AuditLog from '../models/AuditLog.js';
 
+import {getAuditLogsForMonth}  from '../utils/auditArchival.js';
+
+import config from '../utils/config.js';
+const {jwtSecret} = config;
+
+import {requireCompanyForRequest} from '../utils/tenant.js';
 const router = express.Router();
 
-const escapeRegExp = (text) => {
+export const escapeRegExp = (text) => {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });
@@ -28,14 +31,14 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-const verifyAdmin = (req, res, next) => {
+export const verifyAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
 };
 
-const sendExcel = (res, workbook, filename) => {
+export const sendExcel = (res, workbook, filename) => {
   const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -113,4 +116,4 @@ router.get('/audit', verifyToken, requireCompanyForRequest, verifyAdmin, async (
   }
 });
 
-module.exports = router;
+export default router;

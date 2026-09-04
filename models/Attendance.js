@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const attendanceSchema = new mongoose.Schema({
   employeeId: {
@@ -35,6 +35,8 @@ const attendanceSchema = new mongoose.Schema({
   },
 });
 
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+
 // Database indexes for performance
 attendanceSchema.index({ employeeId: 1 });
 attendanceSchema.index({ timestamp: -1 });
@@ -42,4 +44,4 @@ attendanceSchema.index({ createdAt: -1 });
 attendanceSchema.index({ employeeId: 1, timestamp: -1 });
 attendanceSchema.index({ employeeId: 1, createdAt: -1 });
 
-module.exports = mongoose.model('Attendance', attendanceSchema);
+export default Attendance;

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const auditLogArchiveSchema = new mongoose.Schema({
   employeeId: {
@@ -22,4 +22,5 @@ const auditLogArchiveSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('AuditLogArchive', auditLogArchiveSchema);
+const AuditLogArchive = mongoose.model('AuditLogArchive', auditLogArchiveSchema);
+export default AuditLogArchive;

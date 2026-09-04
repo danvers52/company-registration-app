@@ -1,16 +1,16 @@
-const mongoose = require('mongoose');
-const AuditLog = require('../models/AuditLog');
-const AuditLogArchive = require('../models/AuditLogArchive');
+import mongoose from 'mongoose';
+import AuditLog from '../models/AuditLog.js';
+import AuditLogArchive from '../models/AuditLogArchive.js';
 
 const ARCHIVE_AFTER_MONTHS = 5;
 
-function getArchiveCutoffDate() {
+export const getArchiveCutoffDate = () => {
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - ARCHIVE_AFTER_MONTHS);
   return cutoff;
 }
 
-function getMonthRange(month) {
+export const getMonthRange = (month) => {
   if (!month) {
     const start = new Date();
     start.setDate(1);
@@ -27,7 +27,7 @@ function getMonthRange(month) {
   return { start, end };
 }
 
-async function archiveOldAuditLogs() {
+export const archiveOldAuditLogs = async () => {
   const cutoffDate = getArchiveCutoffDate();
   const oldLogs = await AuditLog.find({ timestamp: { $lt: cutoffDate } }).lean();
 
@@ -46,25 +46,25 @@ async function archiveOldAuditLogs() {
   return { moved: oldLogs.length };
 }
 
-const attachAuditUserFields = (log) => ({
+export const attachAuditUserFields = (log) => ({
   ...log,
   userName: log.employeeId?.name || null,
   userEmail: log.employeeId?.email || null,
   userRole: log.employeeId?.role || null,
 });
 
-function isObjectIdLike(value) {
+export const isObjectIdLike = (value) => {
   return value && mongoose.Types.ObjectId.isValid(value);
 }
 
-function populateAuditQuery(query) {
+export const populateAuditQuery = (query) => {
   return query.populate({
     path: 'employeeId',
     select: 'name email role company',
   });
 }
 
-function filterAuditLogs(logs, companyIdOrDomain, hasObjectId) {
+export const filterAuditLogs = (logs, companyIdOrDomain, hasObjectId) => {
   if (!companyIdOrDomain) return logs;
   if (!hasObjectId) return [];
 
@@ -73,7 +73,7 @@ function filterAuditLogs(logs, companyIdOrDomain, hasObjectId) {
   ));
 }
 
-async function getAuditLogsForCompany(companyIdOrDomain) {
+export const getAuditLogsForCompany = async (companyIdOrDomain) => {
   const hasObjectId = isObjectIdLike(companyIdOrDomain);
   let query = AuditLog.find().sort({ timestamp: -1 });
 
@@ -86,7 +86,7 @@ async function getAuditLogsForCompany(companyIdOrDomain) {
     .map(attachAuditUserFields);
 }
 
-async function getArchivedAuditLogsForCompany(companyIdOrDomain) {
+export const getArchivedAuditLogsForCompany = async (companyIdOrDomain) => {
   const hasObjectId = isObjectIdLike(companyIdOrDomain);
   let query = AuditLogArchive.find().sort({ timestamp: -1 });
 
@@ -99,7 +99,7 @@ async function getArchivedAuditLogsForCompany(companyIdOrDomain) {
     .map(attachAuditUserFields);
 }
 
-async function getAuditLogsForMonth(month, companyIdOrDomain) {
+export const getAuditLogsForMonth = async (month, companyIdOrDomain) => {
   const { start, end } = getMonthRange(month);
   const hasObjectId = isObjectIdLike(companyIdOrDomain);
 
@@ -125,7 +125,7 @@ async function getAuditLogsForMonth(month, companyIdOrDomain) {
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
-async function getArchivedAuditLogsForMonth(month, companyIdOrDomain) {
+export const getArchivedAuditLogsForMonth = async (month, companyIdOrDomain) => {
   const { start, end } = getMonthRange(month);
 
   let query = AuditLogArchive.find({
@@ -142,7 +142,7 @@ async function getArchivedAuditLogsForMonth(month, companyIdOrDomain) {
   return filterAuditLogs(logs, companyIdOrDomain, hasObjectId).map(attachAuditUserFields);
 }
 
-module.exports = {
+export default {
   ARCHIVE_AFTER_MONTHS,
   archiveOldAuditLogs,
   getAuditLogsForMonth,

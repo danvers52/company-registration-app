@@ -7,27 +7,13 @@ import config from '../utils/config.js';
 
 const { jwtSecret, jwtExpiresIn } = config;
 
-import {
-  isValidEmail,
-  isValidPassword,
-  isValidRole,
-  isNonEmptyString,
-  sendError
-} from '../utils/validators.js';
+import {isValidEmail, isValidPassword, isValidRole, isNonEmptyString, sendError} from '../utils/validators.js';
 
-import {
-  getEmailDomain,
-  resolveCompanyByEmail,
-  ensureCompanyByEmail,
-  requireCompanyForRequest
-} from '../utils/tenant.js';
-
-// routes/auth.js
+import {getEmailDomain, resolveCompanyByEmail, ensureCompanyByEmail, requireCompanyForRequest} from '../utils/tenant.js';
 const router = express.Router();
-export default router;
 
 // Middleware to verify token
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
@@ -40,7 +26,7 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-const verifyAdmin = (req, res, next) => {
+export const verifyAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -110,7 +96,7 @@ router.post('/register', verifyToken, requireCompanyForRequest, verifyAdmin, asy
   }
 });
 
-async function hasAdminForCompany(companyId) {
+export async function hasAdminForCompany(companyId) {
   return await Employee.exists({ role: 'admin', company: companyId });
 }
 
@@ -342,3 +328,5 @@ router.post('/logout', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+export default router;

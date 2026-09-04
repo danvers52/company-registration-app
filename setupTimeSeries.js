@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-require('dotenv').config();
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-registration')
@@ -13,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-r
 const db = mongoose.connection;
 
 // Setup function
-async function setupTimeSeries() {
+export async function setupTimeSeries() {
   try {
     console.log('Setting up Time-Series Collections...\n');
 
@@ -110,4 +111,4 @@ async function setupTimeSeries() {
 }
 
 // Run setup
-setupTimeSeries();
+export default setupTimeSeries;

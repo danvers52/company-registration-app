@@ -1,20 +1,17 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const Attendance = require('../models/Attendance');
-const AuditLog = require('../models/AuditLog');
-const Employee = require('../models/Employee');
-const {
-  isValidObjectId,
-  isValidAttendanceType,
-  isValidDateString,
-  isNonEmptyString,
-  sendError,
-} = require('../utils/validators');
-const { jwtSecret } = require('../utils/config');
-const { requireCompanyForRequest, isSameCompany } = require('../utils/tenant');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import Attendance from '../models/Attendance.js';
+import AuditLog from '../models/AuditLog.js';
+import Employee from '../models/Employee.js';
+
+import {isValidObjectId, isValidAttendanceType, isValidDateString, isNonEmptyString, sendError} from '../utils/validators.js';
+import config from '../utils/config.js';
+const { jwtSecret } = config;
+
+import {requireCompanyForRequest, isSameCompany} from '../utils/tenant.js';
 const router = express.Router();
 
-const verifyAdmin = (req, res, next) => {
+export const verifyAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -22,7 +19,7 @@ const verifyAdmin = (req, res, next) => {
 };
 
 // Middleware to verify token
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
@@ -274,4 +271,4 @@ router.get('/admin/all', verifyToken, verifyAdmin, requireCompanyForRequest, asy
   }
 });
 
-module.exports = router;
+export default router;
