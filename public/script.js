@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Update Clock
-function updateClock() {
+export function updateClock() {
     const now = new Date();
     const timeString = now.toLocaleTimeString();
     const clockElement = document.getElementById('currentTime');
@@ -191,7 +191,7 @@ function updateClock() {
     }
 }
 
-function updateBreakButtons() {
+ export function updateBreakButtons() {
     Object.entries(breakButtons).forEach(([key, button]) => {
         if (!button) return;
 
@@ -202,7 +202,7 @@ function updateBreakButtons() {
     });
 }
 
-function formatAttendanceType(type) {
+export function formatAttendanceType(type) {
     const labels = {
         'clock-in': 'Clock In',
         'clock-out': 'Clock Out',
@@ -219,7 +219,7 @@ function formatAttendanceType(type) {
     return labels[type] || type;
 }
 
-async function toggleBreak(breakType) {
+export async function toggleBreak(breakType) {
     if (!currentUser) {
         alert('Please log in first');
         return;
@@ -238,7 +238,7 @@ async function toggleBreak(breakType) {
 }
 
 //message helper
-function message(text, type = 'error') {
+export function message(text, type = 'error') {
 	const msgBox = document.getElementById('loginMessage');
 	
 	if (!msgBox) return;
@@ -275,7 +275,7 @@ function message(text, type = 'error') {
 }
 
 // Handle Login
-async function handleLogin(e) {
+export async function handleLogin(e) {
     e.preventDefault();
     
 	const emailInput = document.getElementById('email');
@@ -300,38 +300,38 @@ async function handleLogin(e) {
 			
             //account not found
         } else if (response.status === 404) {
-            message('User account does not exist. Please create or advise your admin first', 'error');
+            message('✗ User account does not exist. Please create or advise your admin first', 'error');
             loginForm.reset();
 			emailInput.focus();
 			
             //wrong account details
         } else if (response.status === 401) {
-            message('Invalid Credentials. Please try again', 'warning');
+            message('⚠ Invalid Credentials. Please try again', 'warning');
 			passwordInput.value = '';
 			passwordInput.focus();
 			
 			//Inactive account
         } else if (response.status === 403) {
-			message('Your account is inactive. Contact your administrator', 'error');
+			message('✗ Your account is inactive. Contact your administrator', 'error');
 			
 			//Other errors
 		} else {
-			alert('Login failed. Please try again later', 'warning');
+			alert('⚠ Login failed. Please try again later', 'warning');
 		}
 		
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed. Server may not be running.', 'warning');
+        alert('⚠ Login failed. Server may not be running.', 'warning');
     }
 }
 
-function showSignupSection(show) {
+export function showSignupSection(show) {
     document.getElementById('forgotPasswordSection').style.display = 'none';
     document.getElementById('resetPasswordSection').style.display = 'none';
     document.getElementById('signupSection').style.display = show ? 'block' : 'none';
 }
 
-async function handleSignup(e) {
+export async function handleSignup(e) {
     e.preventDefault();
 
     const name = document.getElementById('signupName').value;
@@ -351,7 +351,7 @@ async function handleSignup(e) {
         const data = await response.json();
         if (response.ok) {
             signupMessage.style.color = '#065f46';
-            signupMessage.textContent = 'Admin account created successfully. Redirecting...';
+            signupMessage.textContent = '✓ Admin account created successfully. Redirecting...';
             localStorage.setItem('token', data.token);
             currentUser = data.user;
             updateCurrentUserUI();
@@ -359,16 +359,16 @@ async function handleSignup(e) {
             loginForm.reset();
         } else {
             signupMessage.style.color = '#b91c1c';
-            signupMessage.textContent = data.error || 'Unable to create admin account';
+            signupMessage.textContent = data.error || '✗ Unable to create admin account';
         }
     } catch (error) {
         console.error('Signup error:', error);
         signupMessage.style.color = '#b91c1c';
-        signupMessage.textContent = 'Signup failed. Server may not be running.';
+        signupMessage.textContent = '⚠ Signup failed. Server may not be running.';
     }
 }
 
-function updateCurrentUserUI() {
+export function updateCurrentUserUI() {
     document.getElementById('employeeName').textContent = currentUser.name;
     navLogin.style.display = 'none';
     navLogout.style.display = 'block';
@@ -390,7 +390,7 @@ function updateCurrentUserUI() {
     localStorage.setItem('role', currentUser.role);
 }
 
-async function authFetch(url, options = {}) {
+export async function authFetch(url, options = {}) {
     const token = localStorage.getItem('token');
     const headers = {
         ...(options.headers || {}),
@@ -419,7 +419,7 @@ async function authFetch(url, options = {}) {
     }
 }
 
-async function loadCurrentUser() {
+export async function loadCurrentUser() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
@@ -435,7 +435,7 @@ async function loadCurrentUser() {
 }
 
 //Logic for reseting passwords
-function toggleForgotPassword(showReset) {
+export function toggleForgotPassword(showReset) {
     const forgotSection = document.getElementById('forgotPasswordSection');
     const resetSection = document.getElementById('resetPasswordSection');
     const loginForm = document.getElementById('loginForm');
@@ -456,7 +456,7 @@ function toggleForgotPassword(showReset) {
     if (resetMessage) resetMessage.textContent = '';
 }
 
-async function handleForgotPassword(e) {
+export async function handleForgotPassword(e) {
     e.preventDefault();
     const email = document.getElementById('forgotEmail').value;
     const forgotMessage = document.getElementById('forgotPasswordMessage');
@@ -484,7 +484,7 @@ async function handleForgotPassword(e) {
     }
 }
 
-async function handleResetPassword(e) {
+export async function handleResetPassword(e) {
     e.preventDefault();
     const token = document.getElementById('resetToken').value;
     const password = document.getElementById('resetPassword').value;
@@ -516,7 +516,7 @@ async function handleResetPassword(e) {
 }
 
 // Handle Logout
-function handleLogout() {
+export function handleLogout() {
     currentUser = null;
     activeBreak = null;
     localStorage.removeItem('token');
@@ -537,7 +537,7 @@ function handleLogout() {
 }
 
 // Record Attendance
-async function recordAttendance(type) {
+export async function recordAttendance(type) {
     if (!currentUser) {
         alert('Please log in first');
         return false;
@@ -585,7 +585,7 @@ async function recordAttendance(type) {
 
 //change:
 // Add attendance record
-async function addAttendanceRecord(employeeId, type, timestamp, location, notes) {
+export async function addAttendanceRecord(employeeId, type, timestamp, location, notes) {
   const response = await authFetch('/api/attendance/admin/add', {
     method: 'POST',
     headers: {
@@ -598,7 +598,7 @@ async function addAttendanceRecord(employeeId, type, timestamp, location, notes)
 }
 
 // Edit attendance record
-async function editAttendanceRecord(recordId, updates) {
+export async function editAttendanceRecord(recordId, updates) {
   const response = await authFetch(`/api/attendance/admin/edit/${recordId}`, {
     method: 'PUT',
     headers: {
@@ -611,7 +611,7 @@ async function editAttendanceRecord(recordId, updates) {
 }
 
 // Delete attendance record: change end
-async function deleteAttendanceRecord(recordId) {
+export async function deleteAttendanceRecord(recordId) {
   const response = await authFetch(`/api/attendance/admin/delete/${recordId}`, {
     method: 'DELETE',
   });
@@ -620,7 +620,7 @@ async function deleteAttendanceRecord(recordId) {
 }
 
 // Show History Locally (when server is not available)
-function showHistoryLocally(record) {
+export function showHistoryLocally(record) {
     const historyList = document.getElementById('attendanceHistory');
     const item = document.createElement('div');
     item.className = 'history-item';
@@ -629,7 +629,7 @@ function showHistoryLocally(record) {
 }
 
 // Load Employee History
-async function loadEmployeeHistory() {
+export async function loadEmployeeHistory() {
     try {
         const response = await authFetch('/api/attendance/history');
         
@@ -652,7 +652,7 @@ async function loadEmployeeHistory() {
 }
 
 // Load Admin Data
-async function loadAdminData() {
+export async function loadAdminData() {
     loadEmployeeList();
     loadAttendanceRecords();
     loadAuditLog();
@@ -660,7 +660,7 @@ async function loadAdminData() {
 
 // Load Employee List
 let allEmployees = [];
-async function loadEmployeeList() {
+export async function loadEmployeeList() {
     try {
         const response = await authFetch('/api/employees');
         
@@ -674,7 +674,7 @@ async function loadEmployeeList() {
     }
 }
 
-function renderEmployeeList(employees) {
+export function renderEmployeeList(employees) {
     const employeeList = document.getElementById('employeeList');
     employeeList.innerHTML = '';
 
@@ -701,7 +701,7 @@ function renderEmployeeList(employees) {
 }
 
 // Handle Employee Search
-function handleEmployeeSearch(event) {
+export function handleEmployeeSearch(event) {
     const query = event.target.value.toLowerCase().trim();
     if (!query) {
         renderEmployeeList(allEmployees);
@@ -717,7 +717,7 @@ function handleEmployeeSearch(event) {
 }
 
 // View button for employee details
-function viewEmployeeDetails(employeeId) {
+export function viewEmployeeDetails(employeeId) {
     const employee = allEmployees.find(emp => emp._id === employeeId || emp.id === employeeId);
     if (!employee) return;
 
@@ -725,7 +725,7 @@ function viewEmployeeDetails(employeeId) {
 }
 
 // Handle Delete Employee
-async function deleteEmployee(employeeId) {
+export async function deleteEmployee(employeeId) {
     if (!confirm('Are you sure you want to remove this employee?')) {
         return;
     }
@@ -746,7 +746,7 @@ async function deleteEmployee(employeeId) {
     }
 }
 
-async function loadAttendanceRecords() {
+export async function loadAttendanceRecords() {
     try {
         const dateFilter = document.getElementById('attendanceDateFilter')?.value;
         const query = dateFilter ? `?date=${encodeURIComponent(dateFilter)}` : '';
@@ -783,7 +783,7 @@ async function loadAttendanceRecords() {
 }
 
 // Load Audit Log
-async function loadAuditLog() {
+export async function loadAuditLog() {
     try {
         const month = auditMonthInput?.value;
         const query = month ? `?month=${encodeURIComponent(month)}` : '';
@@ -825,7 +825,7 @@ async function loadAuditLog() {
 }
 
 //Button for 'Archive Now' action
-async function triggerArchiveNow() {
+export async function triggerArchiveNow() {
     try {
         const response = await authFetch('/api/employees/audit/archive/trigger', {
             method: 'POST',
@@ -846,7 +846,7 @@ async function triggerArchiveNow() {
 }
 
 //Load all Archive History
-async function loadArchiveHistory() {
+export async function loadArchiveHistory() {
     try {
         const month = archiveMonthInput?.value;
         const query = month ? `?month=${encodeURIComponent(month)}` : '';
@@ -888,7 +888,7 @@ async function loadArchiveHistory() {
 }
 
 // Handle Add Employee
-async function handleAddEmployee(e) {
+export async function handleAddEmployee(e) {
     e.preventDefault();
     
     const name = document.getElementById('newEmployeeName').value;
@@ -924,7 +924,7 @@ async function handleAddEmployee(e) {
 }
 
 // Show Section
-function showSection(sectionName) {
+export function showSection(sectionName) {
     loginSection.classList.remove('active');
     employeeSection.classList.remove('active');
     adminSection.classList.remove('active');
@@ -946,7 +946,7 @@ function showSection(sectionName) {
 }
 
 // Switch Tab
-function switchTab(tabName) {
+export function switchTab(tabName) {
     // Remove active from all tabs and content
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -975,7 +975,7 @@ function switchTab(tabName) {
 }
 
 // Export Employees to Excel
-async function exportEmployeesToExcel() {
+export async function exportEmployeesToExcel() {
     if (!currentUser || currentUser.role !== 'admin') {
         alert('Only admins can export employees');
         return;
@@ -1005,7 +1005,7 @@ async function exportEmployeesToExcel() {
 }
 
 // Export Audit Log to Excel
-async function exportAuditLogToExcel() {
+export async function exportAuditLogToExcel() {
     if (!currentUser || currentUser.role !== 'admin') {
         alert('Only admins can export audit logs');
         return;
@@ -1035,7 +1035,14 @@ async function exportAuditLogToExcel() {
         alert(error.message || 'Failed to export audit log');
     }
 }
+
+//middleware error handling
+app.use((err, req, res, next) => {
+    console.error(err); //internal log
+    res.status(500).json({ error: 'Internal Server Error' }); //user-friendly message
+});
+
 // Export functions for testing
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { deleteEmployee, viewEmployeeDetails }; 
+if (typeof module !== 'undefined' && defaultExport) {
+    defaultExport({ updateClock, updateBreakButtons, formatAttendanceType, toggleBreak, message, handleLogin, showSignupSection, handleSignup, updateCurrentUserUI, authFetch, loadCurrentUser, toggleForgotPassword, handleForgotPassword, handleResetPassword, handleLogout, recordAttendance, addAttendanceRecord, editAttendanceRecord, deleteAttendanceRecord, showHistoryLocally, loadEmployeeHistory, loadAdminData, loadEmployeeList, renderEmployeeList, handleEmployeeSearch, viewEmployeeDetails, deleteEmployee, loadAttendanceRecords, loadAuditLog, triggerArchiveNow, loadArchiveHistory, handleAddEmployee, showSection, switchTab, exportEmployeesToExcel, exportAuditLogToExcel });
 }
