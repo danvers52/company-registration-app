@@ -1,18 +1,43 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const hpp = require('hpp');
-const mongoSanitize = require('express-mongo-sanitize');
-const { mongoUri, port, corsOrigin, env } = require('./utils/config');
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import hpp from 'hpp';
+import mongoSanitize from 'express-mongo-sanitize';
 
-const app = express();
+//utils and configs
+import config from './utils/config.js';
+import { archiveOldAuditLogs } from './utils/auditArchival.js';
+import { requireCompanyForRequest, isSameCompany } from './utils/tenant.js';
+import { isValidObjectId, isValidAttendanceType, isValidDateString, isNonEmptyString, sendError } from './utils/validators.js';
+
+//models
+import Employee from './models/Employee.js';
+import Attendance from './models/Attendance.js';
+import AuditLog from './models/AuditLog.js';
+import AuditLogArchive from './models/AuditLogArchive.js';
+import Company from './models/Company.js';
+
+//routes
+import authRoutes from './routes/auth.js';
+import employeeRoutes from './routes/employees.js';
+import attendanceRoutes from './routes/attendance.js';
+import exportRoutes from './routes/export.js';
+
+//express app
+export const app = express();
+
+// mount routes
+app.use('/api/auth', authRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/export', exportRoutes);
 
 // Security middleware
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: corsOrigin, methods: ['GET', 'POST', 'PUT', 'DELETE'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+app.use(cors({ origin: config.corsOrigin, methods: ['GET', 'POST', 'PUT', 'DELETE'], allowedHeaders: ['Content-Type', 'Authorization'] }));
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 app.use(hpp());
@@ -39,18 +64,18 @@ app.use(globalRateLimiter);
 app.use('/api/auth', authRateLimiter);
 
 // Validate required environment variables on startup
-const validateEnvironment = () => {
+export const validateEnvironment = () => {
   const errors = [];
   
-  if (!mongoUri || mongoUri.trim() === '') {
+  if (!config.mongoUri || config.mongoUri.trim() === '') {
     errors.push('MONGODB_URI is not set or is empty');
   }
   
-  if (!port || port <= 0 || port > 65535) {
+  if (!config.port || config.port <= 0 || config.port > 65535) {
     errors.push('PORT must be a valid port number (1-65535)');
   }
   
-  if (!corsOrigin || corsOrigin.trim() === '') {
+  if (!config.corsOrigin || config.corsOrigin.trim() === '') {
     errors.push('CORS_ORIGIN is not set or is empty');
   }
   
@@ -70,12 +95,12 @@ validateEnvironment();
 let mongoConnectionAttempts = 0;
 const maxConnectionAttempts = 5;
 
-const connectToMongoDB = async () => {
+export const connectToMongoDB = async () => {
   try {
     mongoConnectionAttempts++;
     console.log(`[${mongoConnectionAttempts}/${maxConnectionAttempts}] Attempting MongoDB connection...`);
     
-    await mongoose.connect(mongoUri, {
+    await mongoose.connect(config.mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
@@ -94,7 +119,7 @@ const connectToMongoDB = async () => {
     } else {
       console.error('✗ Failed to connect to MongoDB after 5 attempts');
       console.error('  Please check:');
-      console.error(`  - MongoDB is running at ${mongoUri}`);
+      console.error(`  - MongoDB is running at ${config.mongoUri}`);
       console.error('  - MONGODB_URI environment variable is correct');
       console.error('  - Network connectivity to the database');
       process.exit(1);
@@ -112,21 +137,18 @@ mongoose.connection.on('error', (err) => {
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠ Mongoose disconnected from MongoDB');
+  console.warn('⚠ Mongoose disconnected from MongoDB. Retrying connection...');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('⟳ MongoDB reconnected');
 });
 
 // Connect to MongoDB
 connectToMongoDB();
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/employees', require('./routes/employees'));
-app.use('/api/attendance', require('./routes/attendance'));
-app.use('/api/export', require('./routes/export'));
-
-const { archiveOldAuditLogs } = require('./utils/auditArchival');
-
-const runAuditArchival = async () => {
+//audit archival scheduler
+export const runAuditArchival = async () => {
   try {
     await archiveOldAuditLogs();
     console.log('Audit archival check completed');
@@ -149,15 +171,13 @@ app.get('/api/health', (req, res) => {
     status: mongoose.connection.readyState === 1 ? 'UP' : 'DOWN',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: env,
+    environment: process.env.NODE_ENV,
     mongodb: {
       connected: mongoose.connection.readyState === 1,
       state: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
     },
   };
-  
-  const statusCode = health.status === 'UP' ? 200 : 503;
-  res.status(statusCode).json(health);
+  res.status(health.status === 'UP' ? 200 : 503).json(health);
 });
 
 // Basic route
@@ -172,12 +192,10 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.message);
+  console.error('✗ Error:', err.message);
   
   const status = err.status || 500;
-  const message = process.env.NODE_ENV === 'production' 
-    ? 'Internal Server Error' 
-    : err.message;
+  const message = process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message;
   
   res.status(status).json({ 
     error: message,
@@ -198,12 +216,11 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Start Server
-const server = app.listen(port, () => {
-  console.log(`✓ Server running on http://localhost:${port}`);
-  console.log(`✓ Environment: ${env}`);
+export const server = app.listen(config.port, () => {
+  console.log(`✓ Server running on http://localhost:${config.port}`);
+  console.log(`✓ Environment: ${config.env}`);
   console.log(`✓ Health check: GET /api/health`);
-});
+})
 
 // Handle server errors
 server.on('error', (err) => {
@@ -215,3 +232,10 @@ server.on('error', (err) => {
     process.exit(1);
   }
 });
+
+export default {
+  mongoUri: process.env.MONGODB_URI || 'mongodb://mongo:27017/company_registration',
+  port: process.env.PORT || 5000,
+  corsOrigin: process.env.CORS_ORIGIN || '*',
+  environment: process.env.NODE_ENV || 'development',
+};
