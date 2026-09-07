@@ -41,11 +41,13 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
     let { employeeId, type, timestamp, location, faceRecognitionData, notes } = req.body;
 
     if (!isValidAttendanceType(type)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');
     }
 
     if (req.user.role === 'employee') {
       if (employeeId && employeeId !== req.user.id) {
+        await session.abortTransaction();
         return sendError(res, 403, 'Employees can only record their own attendance');
       }
       employeeId = req.user.id;
@@ -53,15 +55,18 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
 
     if (req.user.role === 'admin') {
       if (!isValidObjectId(employeeId)) {
+        await session.abortTransaction();
         return sendError(res, 400, 'Valid employeeId is required for admin attendance records');
       }
 
       const targetEmployee = await Employee.findById(employeeId);
       if (!targetEmployee) {
+        await session.abortTransaction();
         return sendError(res, 404, 'Target employee not found');
       }
 
       if (!isSameCompany(targetEmployee, req.user)) {
+        await session.abortTransaction();
         return sendError(res, 403, 'Admins can only record attendance for employees in their own company');
       }
     }
@@ -104,19 +109,23 @@ router.post('/admin/add', verifyToken, verifyAdmin, requireCompanyForRequest, as
     const { employeeId, type, timestamp, location, notes } = req.body;
 
     if (!isValidObjectId(employeeId)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Valid employeeId is required');
     }
 
     if (!isValidAttendanceType(type)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');
     }
 
     const targetEmployee = await Employee.findById(employeeId);
     if (!targetEmployee) {
+      await session.abortTransaction();
       return sendError(res, 404, 'Target employee not found');
     }
 
     if (!isSameCompany(targetEmployee, req.user)) {
+      await session.abortTransaction();
       return sendError(res, 403, 'Admins can only add attendance for employees in their own company');
     }
 
@@ -154,24 +163,29 @@ router.put('/admin/edit/:id', verifyToken, verifyAdmin, requireCompanyForRequest
 
   try {
     if (!isValidObjectId(req.params.id)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Valid attendance record id is required');
     }
 
     const record = await Attendance.findById(req.params.id).populate('employeeId', 'email company');
     if (!record) {
+      await session.abortTransaction();
       return sendError(res, 404, 'Record not found');
     }
 
     if (!isSameCompany(record.employeeId, req.user)) {
+      await session.abortTransaction();
       return sendError(res, 403, 'Admins can only edit attendance records for their own company');
     }
 
     const updates = req.body;
     if (updates.type && !isValidAttendanceType(updates.type)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');
     }
 
     if (updates.timestamp && !isValidDateString(updates.timestamp)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid timestamp');
     }
 
@@ -198,22 +212,25 @@ router.put('/admin/edit/:id', verifyToken, verifyAdmin, requireCompanyForRequest
   }
 });
 
-// Admin deletes a record: change end
+// Admin deletes a record:
 router.delete('/admin/delete/:id', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
   const session = await Attendance.startSession();
   session.startTransaction();
 
   try {
     if (!isValidObjectId(req.params.id)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Valid attendance record id is required');
     }
 
     const record = await Attendance.findById(req.params.id).populate('employeeId', 'email company');
     if (!record) {
+      await session.abortTransaction();
       return sendError(res, 404, 'Record not found');
     }
 
     if (!isSameCompany(record.employeeId, req.user)) {
+      await session.abortTransaction();
       return sendError(res, 403, 'Admins can only delete attendance records for their own company');
     }
 
