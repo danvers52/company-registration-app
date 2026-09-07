@@ -34,6 +34,9 @@ export const verifyToken = (req, res, next) => {
 
 // Record attendance
 router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     let { employeeId, type, timestamp, location, faceRecognitionData, notes } = req.body;
 
@@ -72,23 +75,31 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
       notes,
     });
 
-    await attendance.save();
+    await attendance.save({session});
 
     // Log action
-    new AuditLog({
+    await AuditLog.create([{
       employeeId,
       action: type,
       details: `${type} recorded`,
-    }).save();
+    }], {session});
 
+    await session.commitTransaction();
     res.status(201).json({ message: 'Attendance recorded', attendance });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
 // Admin adds a record for an employee
 router.post('/admin/add', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     const { employeeId, type, timestamp, location, notes } = req.body;
 
@@ -117,22 +128,30 @@ router.post('/admin/add', verifyToken, verifyAdmin, requireCompanyForRequest, as
       notes,
     });
 
-    await attendance.save();
+    await attendance.save({session});
 
-    await AuditLog.create({
+    await AuditLog.create([{
       employeeId,
       action: 'add-attendance',
       details: `Admin added ${type} for ${targetEmployee.email}`,
-    });
+    }], {session});
 
+    await session.commitTransaction();
     res.status(201).json({ message: 'Attendance added by admin', attendance });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
 // Admin edits an existing record
 router.put('/admin/edit/:id', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     if (!isValidObjectId(req.params.id)) {
       return sendError(res, 400, 'Valid attendance record id is required');
@@ -159,23 +178,31 @@ router.put('/admin/edit/:id', verifyToken, verifyAdmin, requireCompanyForRequest
     const updated = await Attendance.findByIdAndUpdate(
       req.params.id,
       updates,
-      { new: true }
+      { new: true, session }
     );
 
-    await AuditLog.create({
+    await AuditLog.create([{
       employeeId: updated.employeeId,
       action: 'edit-attendance',
       details: `Admin edited record ${req.params.id}`,
-    });
+    }], {session});
 
+    await session.commitTransaction();
     res.json({ message: 'Attendance updated', updated });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
 // Admin deletes a record: change end
 router.delete('/admin/delete/:id', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     if (!isValidObjectId(req.params.id)) {
       return sendError(res, 400, 'Valid attendance record id is required');
@@ -190,17 +217,22 @@ router.delete('/admin/delete/:id', verifyToken, verifyAdmin, requireCompanyForRe
       return sendError(res, 403, 'Admins can only delete attendance records for their own company');
     }
 
-    const deleted = await Attendance.findByIdAndDelete(req.params.id);
+    const deleted = await Attendance.findByIdAndDelete(req.params.id, {session});
 
-    await AuditLog.create({
+    await AuditLog.create([{
       employeeId: deleted.employeeId,
       action: 'delete-attendance',
       details: `Admin deleted record ${req.params.id}`,
-    });
+    }], {session});
 
+    await session.commitTransaction();
     res.json({ message: 'Attendance deleted', deleted });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
