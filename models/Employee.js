@@ -23,6 +23,7 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     enum: ['employee', 'admin'],
     default: 'employee',
+    required: true,
   },
   company: {
     type: mongoose.Schema.Types.ObjectId,
