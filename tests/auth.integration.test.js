@@ -1,38 +1,27 @@
 import mongoose from 'mongoose';
 import request from 'supertest';
-import express from 'express';
-import authRouter from '../routes/auth.js';
-import config from '../utils/config.js';
-import Employee from '../models/Employee.js'; // use Employee model
+import Employee from '../models/Employee.js'; 
+import jwt from 'jsonwebtoken';
+import app from '../server.js'
 
-// Create Express app for testing
-const app = express();
-app.use(express.json());
-app.use('/api/auth', authRouter);
-
-// Resolve URI from env or fallback config
-const uri = process.env.MONGO_URI_TEST || config.mongoUri;
+let adminToken;
 
 // Connect once before all tests
 beforeAll(async () => {
-    console.log('Connecting to:', uri);
-    try {
-      await mongoose.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 30000,
-        socketTimeoutMS: 30000,
-      });
-      console.log('MongoDB connected successfully');
-    } catch (err) {
-      console.error('MongoDB connection error:', err.message);
-      throw err;
-    }
-}, 90000);
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
 
-// Clean up just the Employee collection before each test
-beforeEach(async () => {
+  //clear DB before seeding
   await Employee.deleteMany({});
+
+  //seed admin
+  const admin = await Employee.create({
+    name: 'Shanel',
+    email: 'shanel@example.com',
+    password: 'Password123',
+    role: 'admin'
+  });
+
+  adminToken = jwt.sign({id: admin._id}, process.env.JWT_SECRET);
 });
 
 // Disconnect after all tests
@@ -41,7 +30,7 @@ afterAll(async () => {
 });
 
 describe('Auth API Integration Tests', () => {
-  // --- 1. Signup with valid data ---
+  // 1. Signup with valid data
   it('should signup a new employee successfully', async () => {
     const res = await request(app)
       .post('/api/auth/signup')
@@ -56,29 +45,31 @@ describe('Auth API Integration Tests', () => {
     expect(res.body.user).toHaveProperty('email', 'shanel@example.com');
   });
 
-  // --- 2. Login with valid credentials ---
+  // 2. Login with valid credentials
   it('should login successfully with correct credentials', async () => {
-    await request(app)
+    const res = await request(app)
       .post('/api/auth/signup')
       .send({
-        name: 'Shanel',
         email: 'shanel@example.com',
         password: 'Password123',
-        role: 'admin'
       });
 
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: 'shanel@example.com',
-        password: 'Password123'
-      });
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('token');
     expect(res.body.user).toHaveProperty('email', 'shanel@example.com');
   });
 
-  // --- 3. NoSQL injection attempt on login ---
+  it('should reject login with wrong password', async () => {
+    const res = await request(app)
+    .post('/api/auth/login')
+    .send({
+      email: 'shanel@example.com',
+      password: 'WrongPassword'
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  // 3. NoSQL injection attempt on login
   it('should reject NoSQL injection payloads', async () => {
     const res = await request(app)
       .post('/api/auth/login')
@@ -90,7 +81,7 @@ describe('Auth API Integration Tests', () => {
     expect(res.body).toHaveProperty('error');
   });
 
-  // --- 4. Signup with invalid role injection ---
+  // 4. Signup with invalid role injection
   it('should reject invalid role injection', async () => {
     const res = await request(app)
       .post('/api/auth/signup')
@@ -104,7 +95,7 @@ describe('Auth API Integration Tests', () => {
     expect(res.body).toHaveProperty('error');
   });
 
-  // --- 5. Signup with invalid email ---
+  // 5. Signup with invalid email
   it('should reject invalid email format', async () => {
     const res = await request(app)
       .post('/api/auth/signup')
