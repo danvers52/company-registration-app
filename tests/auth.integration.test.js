@@ -6,22 +6,10 @@ import app from '../server.js'
 
 let adminToken;
 
-// Connect once before all tests
-beforeAll(async () => {
+beforeEach(async () => {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
 
-  //clear DB before seeding
   await Employee.deleteMany({});
-
-  //seed admin
-  const admin = await Employee.create({
-    name: 'Shanel',
-    email: 'shanel@example.com',
-    password: 'Password123',
-    role: 'admin'
-  });
-
-  adminToken = jwt.sign({id: admin._id}, process.env.JWT_SECRET);
 });
 
 // Disconnect after all tests
@@ -50,16 +38,28 @@ describe('Auth API Integration Tests', () => {
     const res = await request(app)
       .post('/api/auth/signup')
       .send({
+        name: 'Shanel',
         email: 'shanel@example.com',
         password: 'Password123',
+        role: 'admin',
       });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('token');
-    expect(res.body.user).toHaveProperty('email', 'shanel@example.com');
+    expect(res.statusCode).toBe(201);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'shanel@example.com', password: 'Password123' });
+
+    expect(login.statusCode).toBe(200);
+    expect(login.body).toHaveProperty('token');
+    expect(login.body.user).toHaveProperty('email', 'shanel@example.com');
   });
 
   it('should reject login with wrong password', async () => {
+    await request(app)
+      .post('/api/auth/signup')
+      .send({ name: 'Shanel', email: 'shanel@example.com', password: 'Password123', role: 'admin' });
+
     const res = await request(app)
     .post('/api/auth/login')
     .send({
