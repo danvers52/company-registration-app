@@ -71,6 +71,15 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
       }
     }
 
+    //error handling for same record types being recorded: one record type per employee each time
+    if (type === 'clock-in') {
+      const existingClockIn = await Attendance.findOne({ employeeId, type }, null, { session });
+      if (existingClockIn) {
+        await session.abortTransaction();
+        return sendError(res, 400, 'Employee is already clocked in');
+      }
+    }
+
     const attendance = new Attendance({
       employeeId,
       type,
@@ -94,6 +103,9 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
   } catch (error) {
 
     await session.abortTransaction();
+    if (error.code === 11000 || error.code === 112 || error.hasErrorLabel?.('TransientTransactionError')) {
+      return sendError(res, 400, 'Employee is already clocked in');
+    }
     res.status(500).json({ error: error.message });
   } finally {
     session.endSession();
