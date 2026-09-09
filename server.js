@@ -48,7 +48,7 @@ app.get('/', (req, res) => {
 //Global API limiter:
 const globalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, //15 minutes
-  max: 5000, //200 requests per window
+  max: 200, //200 requests per window
   message: { error: 'More than 200 resquests occurred, please try again later after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -57,7 +57,7 @@ const globalRateLimiter = rateLimit({
 //Login limiter:
 const authRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, //10 minutes
-  max: 5000, //5 login attempt per window
+  max: 15, //5 login attempt per window
   message: { error: 'More than 5 login attempts occurred, please try again later after 10 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -65,7 +65,7 @@ const authRateLimiter = rateLimit({
 
 const exportRateLimiter = rateLimit ({
   windowMs: 15 * 60 * 1000, //15 minutes
-  max: 5000, //10 export requests per window
+  max: 10, //10 export requests per window
   message: {error: 'More than 10 export requests occurred, please try again later after 15 minutes.'},
   standardHeaders: true,
   legacyHeaders: false,
