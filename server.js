@@ -179,9 +179,11 @@ export const runAuditArchival = async () => {
   await runAuditArchival();
 })();
 
-setInterval(() => {
+//graceful exit of program despite a timer loop
+const auditArchivalInterval = setInterval(() => {
   runAuditArchival();
 }, 24 * 60 * 60 * 1000);
+auditArchivalInterval.unref();
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -235,21 +237,23 @@ process.on('SIGINT', () => {
 });
 
 //Start server
-const server = app.listen(config.port, () => {
+const server = config.env === 'test' ? null : app.listen(config.port, () => {
   console.log(`✓ Server running on http://localhost:${config.port}`);
   console.log(`✓ Environment: ${config.env}`);
   console.log(`✓ Health check: GET /api/health`);
-})
+});
 
 // Handle server errors
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`✗ Port ${port} is already in use`);
-    process.exit(1);
-  } else {
-    console.error('✗ Server error:', err);
-    process.exit(1);
-  }
-});
+if (server) {
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`✗ Port ${config.port} is already in use`);
+      process.exit(1);
+    } else {
+      console.error('✗ Server error:', err);
+      process.exit(1);
+    }
+  });
+}
 
 export default app;
