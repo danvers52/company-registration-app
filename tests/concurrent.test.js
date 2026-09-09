@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../server.js';
 import Employee from '../models/Employee.js';
+import Attendance from '../models/Attendance.js';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 
@@ -11,6 +12,9 @@ beforeAll(async () => {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
 
   //Clears DB once before seeding
+  await Attendance.deleteMany({});
+  //synchronizing the indexes in the schema to MongoDB
+  await Attendance.init();
   await Employee.deleteMany({});
 
   //Seeding employees
@@ -24,10 +28,10 @@ beforeAll(async () => {
   empCId = empC._id.toString();
 
   //Generate the tokens for logins
-  empAToken = jwt.sign({id: empA._id}, process.env.JWT_SECRET);
-  empBToken = jwt.sign({id: empB._id}, process.env.JWT_SECRET);
-  empCToken = jwt.sign({id: empC._id}, process.env.JWT_SECRET);
-  adminToken = jwt.sign({id: admin._id}, process.env.JWT_SECRET);
+  empAToken = jwt.sign({id: empA._id, email: empA.email, role: empA.role}, process.env.JWT_SECRET);
+  empBToken = jwt.sign({id: empB._id, email: empB.email, role: empB.role}, process.env.JWT_SECRET);
+  empCToken = jwt.sign({id: empC._id, email: empC.email, role: empC.role}, process.env.JWT_SECRET);
+  adminToken = jwt.sign({id: admin._id, email: admin.email, role: admin.role}, process.env.JWT_SECRET);
 });
 
 afterAll(async () => {
@@ -76,7 +80,7 @@ describe('Concurrent Access Handling', () => {
     const empD = await Employee.create({name: 'Emp D', email: 'empD@test.com', password: 'Password123', role: 'employee'});
     empDId = empD._id.toString();
 
-    const empDToken = jwt.sign({id: empD._id}, process.env.JWT_SECRET);
+    const empDToken = jwt.sign({id: empD._id, email: empD.email, role: empD.role}, process.env.JWT_SECRET);
 
     const empD1 = request(app)
       .post('/api/attendance/record')
