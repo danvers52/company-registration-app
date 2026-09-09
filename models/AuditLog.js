@@ -8,7 +8,7 @@ const auditLogSchema = new mongoose.Schema({
   action: {
     type: String,
     enum: [
-      'login', 'logout', 'add-employee', 'remove-employee', 'edit-profile', 
+      'login', 'logout', 'signup', 'add-employee', 'remove-employee', 'edit-profile',
       'clock-in', 'clock-out',
       'tea-break-out', 'tea-break-in', 'lunch-break-out', 'lunch-break-in',
       'client-visit-out', 'client-visit-in',
