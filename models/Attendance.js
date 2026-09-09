@@ -35,6 +35,9 @@ const attendanceSchema = new mongoose.Schema({
   },
 });
 
+//implementing index per record to ensure atomicity
+attendanceSchema.index({ employeeId: 1, type: 1 }, { unique: true });
+
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
 // Database indexes for performance
