@@ -6,7 +6,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGO_URI=mongodb://mongo:27017/company-registration
+      - MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
     command: npm start
 
   test:
@@ -14,11 +14,13 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGO_URI_TEST=mongodb://mongo:27017/company-registration-test
+      - MONGODB_URI=mongodb://mongo:27017/company-registration-test?replicaSet=rs0
+      - NODE_ENV=test
     command: sh -c "until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done; npm test"
 
   mongo:
     image: mongo:6
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
     volumes:
