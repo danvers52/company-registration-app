@@ -8,4 +8,4 @@ global.TextDecoder = TextDecoder;
 global.alert = () => {};
 global.confirm = () => true;
 
-dotenv.config({ path: '.env.test' });
+dotenv.config({ path: '.env.test', override: !process.env.MONGODB_URI });
