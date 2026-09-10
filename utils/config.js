@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const NODE_ENV = process.env.NODE_ENV?.trim() || 'development';
+const NODE_ENV = process.env.NODE_ENV?.trim() || 'production';
 const JWT_SECRET = process.env.JWT_SECRET?.trim();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN?.trim() || '24h';
 const MONGODB_URI = process.env.MONGODB_URI?.trim() || 'mongodb://mongo:27017/company-registration?replicaSet=rs0';
@@ -23,7 +23,7 @@ if (Number.isNaN(BCRYPT_SALT_ROUNDS) || BCRYPT_SALT_ROUNDS < 10) {
 }
 
 export default {
-  jwtSecret: JWT_SECRET || 'k2xD8qxpeV8PU9uYgBQq8YMeG8t3oSoN',
+  jwtSecret: JWT_SECRET || 'k2xD8qxpEV8PU9uYgBQq8YMeG8t3oSoN',
   jwtExpiresIn: JWT_EXPIRES_IN,
   mongoUri: MONGODB_URI,
   port: Number(PORT),
