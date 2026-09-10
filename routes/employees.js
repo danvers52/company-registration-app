@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import Employee from '../models/Employee.js';
+import ArchivedEmployee from '../models/ArchivedEmployee.js';
 import AuditLog from '../models/AuditLog.js';
 import AuditLogArchive from '../models/AuditLogArchive.js';
 
@@ -45,6 +46,18 @@ router.get('/', verifyToken, requireCompanyForRequest, verifyAdmin, async (req, 
       { company: req.company._id },
       '-password'
     ).sort({ name: 1 });
+    res.json(employees);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get archived employees (Admin only)
+router.get('/archive/employees', verifyToken, requireCompanyForRequest, verifyAdmin, async (req, res) => {
+  try {
+    const employees = await ArchivedEmployee.find({ company: req.company._id })
+      .select('-password -resetPasswordToken')
+      .sort({ archivedAt: -1 });
     res.json(employees);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -203,8 +216,10 @@ router.put('/:id', verifyToken, async (req, res) => {
 
 // Delete employee (Admin only)
 router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
+  const session = await Employee.startSession();
+  session.startTransaction();
   try {
-    const employee = await Employee.findById(req.params.id);
+    const employee = await Employee.findById(req.params.id).session(session);
     if (!employee) {
       return res.status(404).json({ error: 'Employee not found' });
     }
@@ -213,16 +228,88 @@ router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
       return res.status(403).json({ error: 'Cannot remove employee from another company' });
     }
 
-    await Employee.findByIdAndDelete(req.params.id);
+    await ArchivedEmployee.create([{
+      originalEmployeeId: employee._id,
+      name: employee.name,
+      email: employee.email,
+      password: employee.password,
+      role: employee.role,
+      company: employee.company,
+      department: employee.department,
+      profilePicture: employee.profilePicture,
+      resetPasswordToken: employee.resetPasswordToken,
+      resetPasswordExpires: employee.resetPasswordExpires,
+      isActive: employee.isActive,
+      createdAt: employee.createdAt,
+      updatedAt: employee.updatedAt,
+      archivedBy: req.user.id,
+    }], { session });
+    await Employee.deleteOne({ _id: req.params.id }, { session });
 
     // Log action
-    new AuditLog({
+    await AuditLog.create([{
       employeeId: req.user.id,
       action: 'remove-employee',
-      details: `Removed employee: ${employee.name}`,
-    }).save();
+      details: `Archived employee: ${employee.name}`,
+    }], { session });
 
-    res.json({ message: 'Employee deleted successfully' });
+    await session.commitTransaction();
+    res.json({ message: 'Employee archived successfully' });
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
+  }
+});
+
+// Restore an archived employee (Admin only)
+router.post('/archive/employees/:id/restore', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Employee.startSession();
+  session.startTransaction();
+  try {
+    const archived = await ArchivedEmployee.findOne({ _id: req.params.id, company: req.company._id }).session(session);
+    if (!archived) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: 'Archived employee not found' });
+    }
+    if (await Employee.exists({ email: archived.email })) {
+      await session.abortTransaction();
+      return res.status(409).json({ error: 'An active employee already uses this email' });
+    }
+
+    await Employee.collection.insertOne({
+      _id: archived.originalEmployeeId,
+      name: archived.name,
+      email: archived.email,
+      password: archived.password,
+      role: archived.role,
+      company: archived.company,
+      department: archived.department,
+      profilePicture: archived.profilePicture,
+      resetPasswordToken: archived.resetPasswordToken,
+      resetPasswordExpires: archived.resetPasswordExpires,
+      isActive: archived.isActive,
+      createdAt: archived.createdAt,
+      updatedAt: archived.updatedAt,
+    }, { session });
+    await ArchivedEmployee.deleteOne({ _id: archived._id }, { session });
+    await session.commitTransaction();
+    res.json({ message: 'Employee restored successfully' });
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
+  }
+});
+
+// Permanently delete an archived employee (Admin only)
+router.delete('/archive/employees/:id', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  try {
+    const deleted = await ArchivedEmployee.findOneAndDelete({ _id: req.params.id, company: req.company._id });
+    if (!deleted) return res.status(404).json({ error: 'Archived employee not found' });
+    res.json({ message: 'Archived employee permanently deleted' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

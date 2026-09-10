@@ -8,6 +8,7 @@ A tenant-aware employee attendance and admin dashboard application built with No
 - Employee break tracking for tea, lunch, client visits, and safety drills
 - Attendance history and date filtering
 - Admin employee management and attendance editing
+- Employee archiving with restore and permanent-delete options
 - Audit log tracking and export support
 - Archival support and management
 - Tenant-aware authorization with `Company` model
@@ -137,7 +138,7 @@ http://localhost:5000
 - `GET /api/employees`
 - `GET /api/employees/:id`
 - `PUT /api/employees/:id`
-- `DELETE /api/employees/:id`
+- `DELETE /api/employees/:id` — archive an employee
 - `GET /api/employees/audit`
 - `GET /api/employees/audit/archive`
 
@@ -157,6 +158,13 @@ http://localhost:5000
 - To test two employees at the same time, use separate browser profiles, browsers, or a normal window plus a private/incognito window. Browser `localStorage` is shared by tabs in the same profile, so logging in as a second employee replaces the first employee's token.
 - Admins can edit attendance records from the Attendance tab or from an employee's View action. The editor changes attendance type, timestamp, and notes without changing the record owner.
 - Company and tenant matching still use the full email domain internally; only the displayed company name removes `.com` and `.co.za`.
+
+### Employee Archive Notes
+
+- The Admin employee-list action is **Archive**, not immediate deletion.
+- Archived employees are hidden from the active employee list and retained in the Archive tab.
+- Admins can restore an archived employee or permanently delete the archived account.
+- Permanent deletion cannot be undone. Archived accounts retain their original attendance and audit references.
 
 ### Export
 

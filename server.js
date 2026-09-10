@@ -14,6 +14,7 @@ import { isValidObjectId, isValidAttendanceType, isValidDateString, isNonEmptySt
 
 //models
 import Employee from './models/Employee.js';
+import ArchivedEmployee from './models/ArchivedEmployee.js';
 import Attendance from './models/Attendance.js';
 import AuditLog from './models/AuditLog.js';
 import AuditLogArchive from './models/AuditLogArchive.js';

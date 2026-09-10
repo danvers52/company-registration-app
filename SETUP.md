@@ -354,7 +354,10 @@ db.employees.insertOne({
 - `GET /api/employees` — list company employees (admin only)
 - `GET /api/employees/:id` — get employee by ID
 - `PUT /api/employees/:id` — update employee profile
-- `DELETE /api/employees/:id` — remove employee (admin only)
+- `DELETE /api/employees/:id` — archive an employee (admin only)
+- `GET /api/employees/archive/employees` — list archived employees (admin only)
+- `POST /api/employees/archive/employees/:id/restore` — restore an archived employee (admin only)
+- `DELETE /api/employees/archive/employees/:id` — permanently delete an archived employee (admin only)
 - `GET /api/employees/audit` — active audit logs (admin only)
 - `GET /api/employees/audit/archive` — archived audit logs (admin only)
 
@@ -374,6 +377,7 @@ db.employees.insertOne({
 - To simulate two employees recording attendance concurrently, use separate browser profiles, separate browsers, or a normal window and an incognito/private window. Tabs in one browser profile share `localStorage`, so a second login replaces the first token.
 - Admins can edit records from the Attendance tab or from an employee's View action. The editor updates the type, timestamp, and notes while preserving the employee attached to the record.
 - The displayed company name removes a trailing `.com` or `.co.za`; the full company/domain value remains available internally for tenant isolation.
+- Removing an employee archives the account instead of deleting it immediately. Admins can restore it or permanently delete it from the Archive tab.
 
 ### Export
 - `GET /api/export/employees` — export employee list

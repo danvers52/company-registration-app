@@ -133,6 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 editAttendanceFromRecord(target.dataset.recordId);
             }
         });
+
+        document.getElementById('archivedEmployees')?.addEventListener('click', (e) => {
+            const target = e.target;
+            const employeeId = target.dataset.id;
+            if (target.classList.contains('restore-employee-btn')) restoreEmployee(employeeId);
+            if (target.classList.contains('permanent-delete-employee-btn')) permanentlyDeleteArchivedEmployee(employeeId);
+        });
     }
     // Load current user if already logged in
     loadCurrentUser();
@@ -793,7 +800,7 @@ export function renderEmployeeList(employees) {
             <p><strong>Role:</strong> ${emp.role}</p>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
                 <button class="btn btn-secondary view-btn" data-id="${employeeId}">View</button>
-                <button class="btn btn-danger delete-btn" data-id="${employeeId}">Remove</button>
+                <button class="btn btn-danger delete-btn" data-id="${employeeId}">Archive</button>
             </div>
         `;
         employeeList.appendChild(card);
@@ -830,7 +837,7 @@ export function viewEmployeeDetails(employeeId) {
 
 // Handle Delete Employee
 export async function deleteEmployee(employeeId) {
-    if (!confirm('Are you sure you want to remove this employee?')) {
+    if (!confirm('Archive this employee? Their account will be removed from the active employee list and kept in Archives for restoration or permanent deletion.')) {
         return;
     }
     
@@ -840,7 +847,7 @@ export async function deleteEmployee(employeeId) {
         });
         
         if (response.ok) {
-            alert('Employee removed successfully');
+            alert('Employee archived successfully');
             loadEmployeeList();
         } else {
             alert('Failed to remove employee');
@@ -964,21 +971,21 @@ export async function loadArchiveHistory() {
 
             if (logs.length === 0) {
                 archiveLog.innerHTML = '<div style="padding: 1rem; text-align: center; color: #666;">No archived logs found for this period</div>';
-                return;
+            } else {
+                logs.forEach(log => {
+                    const entry = document.createElement('div');
+                    entry.className = 'audit-entry';
+                    const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
+                    const name = log.userName || log.employeeId?.name || log.employeeId?.email || 'Unknown user';
+                    const userLabel = `${name}${log.userEmail ? ` (${log.userEmail})` : ''}`;
+                    entry.innerHTML = `
+                        <div class="timestamp">${timestamp}</div>
+                        <div class="action">${userLabel} - ${log.action} - ${log.details || 'No details'}</div>
+                    `;
+                    archiveLog.appendChild(entry);
+                });
             }
-
-            logs.forEach(log => {
-                const entry = document.createElement('div');
-                entry.className = 'audit-entry';
-                const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
-                const name = log.userName || log.employeeId?.name || log.employeeId?.email || 'Unknown user';
-                const userLabel = `${name}${log.userEmail ? ` (${log.userEmail})` : ''}`;
-                entry.innerHTML = `
-                    <div class="timestamp">${timestamp}</div>
-                    <div class="action">${userLabel} - ${log.action} - ${log.details || 'No details'}</div>
-                `;
-                archiveLog.appendChild(entry);
-            });
+            loadArchivedEmployees();
         } else {
             const errorData = await response.json();
             console.error('Archived audit log error:', errorData);
@@ -989,6 +996,61 @@ export async function loadArchiveHistory() {
         console.error('Error loading archived audit log:', error);
         const archiveLog = document.getElementById('archiveLog');
         archiveLog.innerHTML = `<div style="padding: 1rem; color: red;">Connection error: ${error.message}</div>`;
+    }
+}
+
+export async function loadArchivedEmployees() {
+    const container = document.getElementById('archivedEmployees');
+    if (!container) return;
+    try {
+        const response = await authFetch('/api/employees/archive/employees');
+        const employees = await response.json();
+        if (!response.ok) throw new Error(employees.error || 'Unable to load archived employees');
+        container.innerHTML = '';
+        if (!employees.length) {
+            container.innerHTML = '<div style="padding: 1rem; color: #666;">No archived employees</div>';
+            return;
+        }
+        employees.forEach(employee => {
+            const card = document.createElement('div');
+            card.className = 'employee-card';
+            card.innerHTML = `
+                <h4>${employee.name}</h4>
+                <p><strong>Email:</strong> ${employee.email}</p>
+                <p><strong>Archived:</strong> ${new Date(employee.archivedAt).toLocaleString()}</p>
+                <button class="btn btn-success restore-employee-btn" data-id="${employee._id}">Restore</button>
+                <button class="btn btn-danger permanent-delete-employee-btn" data-id="${employee._id}">Permanently Delete</button>
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        container.innerHTML = `<div style="padding: 1rem; color: red;">${error.message}</div>`;
+    }
+}
+
+export async function restoreEmployee(employeeId) {
+    try {
+        const response = await authFetch(`/api/employees/archive/employees/${employeeId}/restore`, { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Restore failed');
+        alert(data.message);
+        loadArchivedEmployees();
+        loadEmployeeList();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+export async function permanentlyDeleteArchivedEmployee(employeeId) {
+    if (!confirm('Permanently delete this archived employee? This cannot be undone.')) return;
+    try {
+        const response = await authFetch(`/api/employees/archive/employees/${employeeId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Permanent deletion failed');
+        alert(data.message);
+        loadArchivedEmployees();
+    } catch (error) {
+        alert(error.message);
     }
 }
 
@@ -1074,6 +1136,7 @@ export function switchTab(tabName) {
         loadAuditLog();
     } else if (tabName === 'archive') {
         loadArchiveHistory();
+        loadArchivedEmployees();
     } else if (tabName === 'employees') {
         loadEmployeeList();
     }
