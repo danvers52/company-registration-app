@@ -190,7 +190,13 @@ router.put('/admin/edit/:id', verifyToken, verifyAdmin, requireCompanyForRequest
       return sendError(res, 403, 'Admins can only edit attendance records for their own company');
     }
 
-    const updates = req.body;
+    const allowedFields = ['type', 'timestamp', 'location', 'notes'];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+
     if (updates.type && !isValidAttendanceType(updates.type)) {
       await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');

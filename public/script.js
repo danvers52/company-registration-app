@@ -126,6 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteEmployee(employeeId);
             }
         });   
+
+        document.getElementById('attendanceRecords')?.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('edit-attendance-btn')) {
+                editAttendanceFromRecord(target.dataset.recordId);
+            }
+        });
     }
     // Load current user if already logged in
     loadCurrentUser();
@@ -599,15 +606,80 @@ export async function addAttendanceRecord(employeeId, type, timestamp, location,
 
 // Edit attendance record
 export async function editAttendanceRecord(recordId, updates) {
-  const response = await authFetch(`/api/attendance/admin/edit/${recordId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(updates)
-  });
-  const data = await response.json();
-  alert(data.message || 'Record updated');
+    const response = await authFetch(`/api/attendance/admin/edit/${recordId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Record update failed');
+    }
+    alert(data.message || 'Record updated');
+    await loadAttendanceRecords();
+}
+
+async function editAttendanceFromRecord(recordId) {
+    try {
+        const response = await authFetch('/api/attendance/admin/all');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to load attendance records');
+
+        const record = (data.records || []).find(item => item._id === recordId);
+        if (!record) throw new Error('Attendance record not found');
+        await promptAndEditAttendance(record);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function promptAndEditAttendance(record) {
+    const type = prompt(
+        'Attendance type:\nclock-in, clock-out, tea-break-out, tea-break-in, lunch-break-out, lunch-break-in, client-visit-out, client-visit-in, safety-drill-out, safety-drill-in',
+        record.type
+    );
+    if (type === null) return;
+
+    const timestamp = prompt('Timestamp (for example, 2026-09-10T09:00:00Z):', record.timestamp);
+    if (timestamp === null) return;
+
+    const notes = prompt('Notes:', record.notes || '');
+    if (notes === null) return;
+
+    try {
+        await editAttendanceRecord(record._id, { type, timestamp, notes });
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function editEmployeeAttendance(employeeId, employeeName) {
+    try {
+        const response = await authFetch('/api/attendance/admin/all');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to load attendance records');
+
+        const records = (data.records || []).filter(record =>
+            (record.employeeId?._id || record.employeeId?.id) === employeeId
+        );
+        if (!records.length) {
+            alert(`No attendance records found for ${employeeName}.`);
+            return;
+        }
+
+        const choices = records.map((record, index) =>
+            `${index + 1}. ${formatAttendanceType(record.type)} - ${new Date(record.timestamp).toLocaleString()}`
+        ).join('\n');
+        const selected = prompt(`Choose a record to edit for ${employeeName}:\n${choices}\nEnter its number:`);
+        const index = Number(selected) - 1;
+        if (!Number.isInteger(index) || !records[index]) return;
+
+        await promptAndEditAttendance(records[index]);
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 // Delete attendance record: change end
@@ -722,6 +794,10 @@ export function viewEmployeeDetails(employeeId) {
     if (!employee) return;
 
     alert(`Name: ${employee.name}\nEmail: ${employee.email}\nRole: ${employee.role}`);
+
+    if (confirm(`Edit an attendance record for ${employee.name}?`)) {
+        editEmployeeAttendance(employeeId, employee.name);
+    }
 }
 
 // Handle Delete Employee
@@ -771,6 +847,7 @@ export async function loadAttendanceRecords() {
                     <p><strong>Type:</strong> ${formatAttendanceType(record.type)}</p>
                     <p><strong>Time:</strong> ${record.timestamp ? new Date(record.timestamp).toLocaleString() : 'N/A'}</p>
                     <p><strong>Notes:</strong> ${record.notes || 'None'}</p>
+                    <button type="button" class="btn btn-secondary edit-attendance-btn" data-record-id="${record._id}">Edit</button>
                 `;
                 attendanceRecords.appendChild(entry);
             });
