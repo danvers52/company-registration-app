@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
+//Constants
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ATTENDANCE_TYPES = new Set([
   'clock-in', 'clock-out',
@@ -7,42 +8,40 @@ const ATTENDANCE_TYPES = new Set([
   'lunch-break-out', 'lunch-break-in',
   'client-visit-out', 'client-visit-in',
   'safety-drill-out', 'safety-drill-in',
+  'restore-employee',
 ]);
 const ROLES = new Set(['employee', 'admin']);
 
-function isNonEmptyString(value) {
+//Helpers
+export function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function isValidEmail(email) {
+export function isValidEmail(email) {
   return isNonEmptyString(email) && EMAIL_REGEX.test(email.trim().toLowerCase());
 }
 
-function isValidPassword(password) {
+export function isValidPassword(password) {
   return isNonEmptyString(password) && password.length >= 8;
 }
 
-function isValidRole(role) {
+export function isValidRole(role) {
   return isNonEmptyString(role) && ROLES.has(role);
 }
 
-function isValidAttendanceType(type) {
+export function isValidAttendanceType(type) {
   return isNonEmptyString(type) && ATTENDANCE_TYPES.has(type);
 }
 
-function isValidDateString(value) {
+export function isValidDateString(value) {
   return isNonEmptyString(value) && !Number.isNaN(Date.parse(value));
 }
 
-function isValidObjectId(value) {
+export function isValidObjectId(value) {
   return typeof value === 'string' && mongoose.Types.ObjectId.isValid(value);
 }
 
-function sendError(res, status, message, details) {
-  return res.status(status).json({ error: message, details });
-}
-
-function sanitizeEmployee(employee) {
+export function sanitizeEmployee(employee) {
   if (!employee) return null;
   return {
     id: employee._id || employee.id,
@@ -55,14 +54,6 @@ function sanitizeEmployee(employee) {
   };
 }
 
-module.exports = {
-  isNonEmptyString,
-  isValidEmail,
-  isValidPassword,
-  isValidRole,
-  isValidAttendanceType,
-  isValidDateString,
-  isValidObjectId,
-  sendError,
-  sanitizeEmployee,
-};
+export function sendError(res, status, message, details) {
+  return res.status(status).json({ error: message, details });
+}

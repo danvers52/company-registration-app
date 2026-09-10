@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const attendanceSchema = new mongoose.Schema({
   employeeId: {
@@ -13,6 +13,7 @@ const attendanceSchema = new mongoose.Schema({
       'tea-break-out', 'tea-break-in', 'lunch-break-out', 'lunch-break-in',
       'client-visit-out', 'client-visit-in',
       'safety-drill-out', 'safety-drill-in',
+      'restore-employee',
     ],
     required: true,
   },
@@ -35,4 +36,16 @@ const attendanceSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('Attendance', attendanceSchema);
+//implementing index per record to ensure atomicity
+attendanceSchema.index({ employeeId: 1, type: 1 }, { unique: true });
+
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+
+// Database indexes for performance
+attendanceSchema.index({ employeeId: 1 });
+attendanceSchema.index({ timestamp: -1 });
+attendanceSchema.index({ createdAt: -1 });
+attendanceSchema.index({ employeeId: 1, timestamp: -1 });
+attendanceSchema.index({ employeeId: 1, createdAt: -1 });
+
+export default Attendance;

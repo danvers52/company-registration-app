@@ -1,20 +1,17 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const Attendance = require('../models/Attendance');
-const AuditLog = require('../models/AuditLog');
-const Employee = require('../models/Employee');
-const {
-  isValidObjectId,
-  isValidAttendanceType,
-  isValidDateString,
-  isNonEmptyString,
-  sendError,
-} = require('../utils/validators');
-const { jwtSecret } = require('../utils/config');
-const { requireCompanyForRequest, isSameCompany } = require('../utils/tenant');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import Attendance from '../models/Attendance.js';
+import AuditLog from '../models/AuditLog.js';
+import Employee from '../models/Employee.js';
+
+import {isValidObjectId, isValidAttendanceType, isValidDateString, isNonEmptyString, sendError} from '../utils/validators.js';
+import config from '../utils/config.js';
+const { jwtSecret } = config;
+
+import {requireCompanyForRequest, isSameCompany} from '../utils/tenant.js';
 const router = express.Router();
 
-const verifyAdmin = (req, res, next) => {
+export const verifyAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -22,7 +19,7 @@ const verifyAdmin = (req, res, next) => {
 };
 
 // Middleware to verify token
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
@@ -37,15 +34,20 @@ const verifyToken = (req, res, next) => {
 
 // Record attendance
 router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     let { employeeId, type, timestamp, location, faceRecognitionData, notes } = req.body;
 
     if (!isValidAttendanceType(type)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');
     }
 
     if (req.user.role === 'employee') {
       if (employeeId && employeeId !== req.user.id) {
+        await session.abortTransaction();
         return sendError(res, 403, 'Employees can only record their own attendance');
       }
       employeeId = req.user.id;
@@ -53,16 +55,28 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
 
     if (req.user.role === 'admin') {
       if (!isValidObjectId(employeeId)) {
+        await session.abortTransaction();
         return sendError(res, 400, 'Valid employeeId is required for admin attendance records');
       }
 
       const targetEmployee = await Employee.findById(employeeId);
       if (!targetEmployee) {
+        await session.abortTransaction();
         return sendError(res, 404, 'Target employee not found');
       }
 
       if (!isSameCompany(targetEmployee, req.user)) {
+        await session.abortTransaction();
         return sendError(res, 403, 'Admins can only record attendance for employees in their own company');
+      }
+    }
+
+    //error handling for same record types being recorded: one record type per employee each time
+    if (type === 'clock-in') {
+      const existingClockIn = await Attendance.findOne({ employeeId, type }, null, { session });
+      if (existingClockIn) {
+        await session.abortTransaction();
+        return sendError(res, 400, 'Employee is already clocked in');
       }
     }
 
@@ -75,40 +89,55 @@ router.post('/record', verifyToken, requireCompanyForRequest, async (req, res) =
       notes,
     });
 
-    await attendance.save();
+    await attendance.save({session});
 
     // Log action
-    new AuditLog({
+    await AuditLog.create([{
       employeeId,
       action: type,
       details: `${type} recorded`,
-    }).save();
+    }], {session});
 
+    await session.commitTransaction();
     res.status(201).json({ message: 'Attendance recorded', attendance });
   } catch (error) {
+
+    await session.abortTransaction();
+    if (error.code === 11000 || error.code === 112 || error.hasErrorLabel?.('TransientTransactionError')) {
+      return sendError(res, 400, 'Employee is already clocked in');
+    }
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
 // Admin adds a record for an employee
 router.post('/admin/add', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     const { employeeId, type, timestamp, location, notes } = req.body;
 
     if (!isValidObjectId(employeeId)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Valid employeeId is required');
     }
 
     if (!isValidAttendanceType(type)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');
     }
 
     const targetEmployee = await Employee.findById(employeeId);
     if (!targetEmployee) {
+      await session.abortTransaction();
       return sendError(res, 404, 'Target employee not found');
     }
 
     if (!isSameCompany(targetEmployee, req.user)) {
+      await session.abortTransaction();
       return sendError(res, 403, 'Admins can only add attendance for employees in their own company');
     }
 
@@ -120,90 +149,125 @@ router.post('/admin/add', verifyToken, verifyAdmin, requireCompanyForRequest, as
       notes,
     });
 
-    await attendance.save();
+    await attendance.save({session});
 
-    await AuditLog.create({
+    await AuditLog.create([{
       employeeId,
       action: 'add-attendance',
       details: `Admin added ${type} for ${targetEmployee.email}`,
-    });
+    }], {session});
 
+    await session.commitTransaction();
     res.status(201).json({ message: 'Attendance added by admin', attendance });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
 // Admin edits an existing record
 router.put('/admin/edit/:id', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     if (!isValidObjectId(req.params.id)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Valid attendance record id is required');
     }
 
     const record = await Attendance.findById(req.params.id).populate('employeeId', 'email company');
     if (!record) {
+      await session.abortTransaction();
       return sendError(res, 404, 'Record not found');
     }
 
     if (!isSameCompany(record.employeeId, req.user)) {
+      await session.abortTransaction();
       return sendError(res, 403, 'Admins can only edit attendance records for their own company');
     }
 
-    const updates = req.body;
+    const allowedFields = ['type', 'timestamp', 'location', 'notes'];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+
     if (updates.type && !isValidAttendanceType(updates.type)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid attendance type');
     }
 
     if (updates.timestamp && !isValidDateString(updates.timestamp)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Invalid timestamp');
     }
 
     const updated = await Attendance.findByIdAndUpdate(
       req.params.id,
       updates,
-      { new: true }
+      { new: true, session }
     );
 
-    await AuditLog.create({
+    await AuditLog.create([{
       employeeId: updated.employeeId,
       action: 'edit-attendance',
       details: `Admin edited record ${req.params.id}`,
-    });
+    }], {session});
 
+    await session.commitTransaction();
     res.json({ message: 'Attendance updated', updated });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
-// Admin deletes a record: change end
+// Admin deletes a record:
 router.delete('/admin/delete/:id', verifyToken, verifyAdmin, requireCompanyForRequest, async (req, res) => {
+  const session = await Attendance.startSession();
+  session.startTransaction();
+
   try {
     if (!isValidObjectId(req.params.id)) {
+      await session.abortTransaction();
       return sendError(res, 400, 'Valid attendance record id is required');
     }
 
     const record = await Attendance.findById(req.params.id).populate('employeeId', 'email company');
     if (!record) {
+      await session.abortTransaction();
       return sendError(res, 404, 'Record not found');
     }
 
     if (!isSameCompany(record.employeeId, req.user)) {
+      await session.abortTransaction();
       return sendError(res, 403, 'Admins can only delete attendance records for their own company');
     }
 
-    const deleted = await Attendance.findByIdAndDelete(req.params.id);
+    const deleted = await Attendance.findByIdAndDelete(req.params.id, {session});
 
-    await AuditLog.create({
+    await AuditLog.create([{
       employeeId: deleted.employeeId,
       action: 'delete-attendance',
       details: `Admin deleted record ${req.params.id}`,
-    });
+    }], {session});
 
+    await session.commitTransaction();
     res.json({ message: 'Attendance deleted', deleted });
   } catch (error) {
+
+    await session.abortTransaction();
     res.status(500).json({ error: error.message });
+  } finally {
+    session.endSession();
   }
 });
 
@@ -274,4 +338,4 @@ router.get('/admin/all', verifyToken, verifyAdmin, requireCompanyForRequest, asy
   }
 });
 
-module.exports = router;
+export default router;

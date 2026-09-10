@@ -1,9 +1,10 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-require('dotenv').config();
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-registration')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-registration?replicaSet=rs0')
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => {
     console.error('MongoDB connection error:', err);
@@ -13,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-r
 const db = mongoose.connection;
 
 // Setup function
-async function setupTimeSeries() {
+export async function setupTimeSeries() {
   try {
     console.log('Setting up Time-Series Collections...\n');
 
@@ -99,15 +100,15 @@ async function setupTimeSeries() {
     await db.collection('employees').createIndex({ email: 1 }, { unique: true });
     console.log('✓ Created indexes for performance\n');
 
-    console.log('✅ Time-Series setup completed successfully!');
+    console.log('✓ Time-Series setup completed successfully!');
     console.log('\nYou can now run: npm start');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error setting up time-series:', error.message);
+    console.error('✗ Error setting up time-series:', error.message);
     process.exit(1);
   }
 }
 
 // Run setup
-setupTimeSeries();
+export default setupTimeSeries;

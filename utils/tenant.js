@@ -1,20 +1,24 @@
-const Company = require('../models/Company');
+import Company from '../models/Company.js';
 
-function escapeRegExp(text) {
+export function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function getEmailDomain(email) {
+export function getEmailDomain(email) {
   return email?.trim().split('@')[1]?.toLowerCase();
 }
 
-async function resolveCompanyByEmail(email) {
+export function getDisplayCompanyName(name) {
+  return name?.replace(/\.(?:co\.za|com)$/i, '') || 'Unknown';
+}
+
+export async function resolveCompanyByEmail(email) {
   const domain = getEmailDomain(email);
   if (!domain) return null;
   return Company.findOne({ domain });
 }
 
-async function ensureCompanyByEmail(email) {
+export async function ensureCompanyByEmail(email) {
   const domain = getEmailDomain(email);
   if (!domain) return null;
 
@@ -29,7 +33,7 @@ async function ensureCompanyByEmail(email) {
   return company;
 }
 
-async function requireCompanyForRequest(req, res, next) {
+export async function requireCompanyForRequest(req, res, next) {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthenticated request' });
   }
@@ -51,7 +55,7 @@ async function requireCompanyForRequest(req, res, next) {
   next();
 }
 
-function isSameCompany(employee, user) {
+export function isSameCompany(employee, user) {
   if (!employee || !user) return false;
   if (employee.company && user.companyId) {
     return employee.company.toString() === user.companyId.toString();
@@ -60,11 +64,3 @@ function isSameCompany(employee, user) {
   const userDomain = getEmailDomain(user.email);
   return employeeDomain && userDomain && employeeDomain === userDomain;
 }
-
-module.exports = {
-  getEmailDomain,
-  resolveCompanyByEmail,
-  ensureCompanyByEmail,
-  requireCompanyForRequest,
-  isSameCompany,
-};

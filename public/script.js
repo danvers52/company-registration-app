@@ -2,28 +2,29 @@
 let currentUser = null;
 
 // DOM Elements
-const loginSection = document.getElementById('loginSection');
-const employeeSection = document.getElementById('employeeSection');
-const adminSection = document.getElementById('adminSection');
+    const loginSection = document.getElementById('loginSection');
+    const employeeSection = document.getElementById('employeeSection');
+    const adminSection = document.getElementById('adminSection');
 
-const navLogin = document.getElementById('navLogin');
-const navEmployee = document.getElementById('navEmployee');
-const navAdmin = document.getElementById('navAdmin');
-const navLogout = document.getElementById('navLogout');
+    const navLogin = document.getElementById('navLogin');
+    const navEmployee = document.getElementById('navEmployee');
+    const navAdmin = document.getElementById('navAdmin');
+    const navLogout = document.getElementById('navLogout');
 
-const loginForm = document.getElementById('loginForm');
-const addEmployeeForm = document.getElementById('addEmployeeForm');
-const btnExportExcel = document.getElementById('btnExportExcel');
-const btnExportAuditLog = document.getElementById('btnExportAuditLog');
-const btnLoadAuditMonth = document.getElementById('btnLoadAuditMonth');
-const btnLoadArchiveHistory = document.getElementById('btnLoadArchiveHistory');
-const btnArchiveNow = document.getElementById('btnArchiveNow');
-const auditMonthInput = document.getElementById('auditMonth');
-const archiveMonthInput = document.getElementById('archiveMonth');
-const btnRefreshAttendance = document.getElementById('btnRefreshAttendance');
-const btnLoadAttendanceRecords = document.getElementById('btnLoadAttendanceRecords');
-const attendanceDateFilter = document.getElementById('attendanceDateFilter');
-const attendanceRecordsContainer = document.getElementById('attendanceRecords');
+    const loginForm = document.getElementById('loginForm');
+    const addEmployeeForm = document.getElementById('addEmployeeForm');
+    const btnExportExcel = document.getElementById('btnExportExcel');
+    const btnExportAuditLog = document.getElementById('btnExportAuditLog');
+    const btnLoadAuditMonth = document.getElementById('btnLoadAuditMonth');
+    const btnLoadArchiveHistory = document.getElementById('btnLoadArchiveHistory');
+    const btnArchiveNow = document.getElementById('btnArchiveNow');
+    const auditMonthInput = document.getElementById('auditMonth');
+    const archiveMonthInput = document.getElementById('archiveMonth');
+    const btnRefreshAttendance = document.getElementById('btnRefreshAttendance');
+    const btnLoadAttendanceRecords = document.getElementById('btnLoadAttendanceRecords');
+    const attendanceDateFilter = document.getElementById('attendanceDateFilter');
+    const attendanceRecordsContainer = document.getElementById('attendanceRecords');
+
 
 // Tab buttons
 const tabButtons = document.querySelectorAll('.tab-button');
@@ -111,11 +112,39 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         handleLogout();
     });
-    
+
+    //Employee card listeners for CSP safety
+    if(typeof document !== 'undefined') {
+        document.getElementById('employeeList')?.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('view-btn')) {
+                const employeeId = target.dataset.id;
+                viewEmployeeDetails(employeeId);
+            }
+            if (target.classList.contains('delete-btn')) {
+                const employeeId = target.dataset.id;
+                deleteEmployee(employeeId);
+            }
+        });   
+
+        document.getElementById('attendanceRecords')?.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('edit-attendance-btn')) {
+                editAttendanceFromRecord(target.dataset.recordId);
+            }
+        });
+
+        document.getElementById('archivedEmployees')?.addEventListener('click', (e) => {
+            const target = e.target;
+            const employeeId = target.dataset.id;
+            if (target.classList.contains('restore-employee-btn')) restoreEmployee(employeeId);
+            if (target.classList.contains('permanent-delete-employee-btn')) permanentlyDeleteArchivedEmployee(employeeId);
+        });
+    }
     // Load current user if already logged in
     loadCurrentUser();
     
-    // Clock buttons
+    // Clock buttons for Employees
     document.getElementById('btnClockIn').addEventListener('click', () => recordAttendance('clock-in'));
     document.getElementById('btnClockOut').addEventListener('click', () => recordAttendance('clock-out'));
     document.getElementById('btnTea').addEventListener('click', () => toggleBreak('tea'));
@@ -141,18 +170,22 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExportAuditLog.addEventListener('click', exportAuditLogToExcel);
     }
 
+    //Load the Audit Month
     if (btnLoadAuditMonth) {
         btnLoadAuditMonth.addEventListener('click', () => loadAuditLog());
     }
 
+    //Load Archives
     if (btnLoadArchiveHistory) {
         btnLoadArchiveHistory.addEventListener('click', () => loadArchiveHistory());
     }
 
+    //Archive data now
     if (btnArchiveNow) {
         btnArchiveNow.addEventListener('click', triggerArchiveNow);
     }
 
+    //Month inputs for previous records
     if (archiveMonthInput) {
         archiveMonthInput.value = new Date().toISOString().slice(0, 7);
     }
@@ -163,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Update Clock
-function updateClock() {
+export function updateClock() {
     const now = new Date();
     const timeString = now.toLocaleTimeString();
     const clockElement = document.getElementById('currentTime');
@@ -172,7 +205,7 @@ function updateClock() {
     }
 }
 
-function updateBreakButtons() {
+ export function updateBreakButtons() {
     Object.entries(breakButtons).forEach(([key, button]) => {
         if (!button) return;
 
@@ -183,7 +216,7 @@ function updateBreakButtons() {
     });
 }
 
-function formatAttendanceType(type) {
+export function formatAttendanceType(type) {
     const labels = {
         'clock-in': 'Clock In',
         'clock-out': 'Clock Out',
@@ -194,13 +227,14 @@ function formatAttendanceType(type) {
         'client-visit-out': 'Client Visit Out',
         'client-visit-in': 'Client Visit In',
         'safety-drill-out': 'Safety Drill Out',
-        'safety-drill-in': 'Safety Drill In'
+        'safety-drill-in': 'Safety Drill In',
+        'restore-employee': 'Employee Restored'
     };
 
     return labels[type] || type;
 }
 
-async function toggleBreak(breakType) {
+export async function toggleBreak(breakType) {
     if (!currentUser) {
         alert('Please log in first');
         return;
@@ -218,44 +252,101 @@ async function toggleBreak(breakType) {
     alert(`${label} ${isEnding ? 'ended' : 'started'} successfully`);
 }
 
+//message helper
+export function message(text, type = 'error') {
+	const msgBox = document.getElementById('loginMessage');
+	
+	if (!msgBox) return;
+	msgBox.textContent = text;
+	
+	//Style based on type
+	if (type === 'success') {
+		msgBox.style.color = '#4bbc00'; 
+        msgBox.style.textShadow = '0 0 8px rgba(4, 154, 29, 0.48)'; // stronger glow
+        msgBox.style.backgroundColor = '#a3ffacce'; // subtle red tint behind text
+        msgBox.style.fontWeight = '600'; // bold text
+        msgBox.style.padding = '6px 10px';
+        msgBox.style.borderRadius = '5px';
+        msgBox.style.transition = 'all 0.5s ease-in-out';
+		
+	} else if (type === 'warning'){
+		msgBox.style.color = '#e36200'; 
+        msgBox.style.textShadow = '0 0 8px rgba(201, 87, 0, 0.6)'; // stronger glow
+        msgBox.style.backgroundColor = '#ffae6f'; // subtle red tint behind text
+        msgBox.style.fontWeight = '600'; // bold text
+        msgBox.style.padding = '6px 10px';
+        msgBox.style.borderRadius = '5px';
+        msgBox.style.transition = 'all 0.5s ease-in-out';
+
+	} else {
+		msgBox.style.color = '#db0000'; // brighter red for visibility
+        msgBox.style.textShadow = '0 0 8px rgba(158, 0, 0, 0.48)'; // stronger glow
+        msgBox.style.backgroundColor = '#fea5a5'; // subtle red tint behind text
+        msgBox.style.fontWeight = '600'; // bold text
+        msgBox.style.padding = '6px 10px';
+        msgBox.style.borderRadius = '5px';
+        msgBox.style.transition = 'all 0.5s ease-in-out';
+	}
+}
+
 // Handle Login
-async function handleLogin(e) {
+export async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+	const emailInput = document.getElementById('email');
+	const passwordInput = document.getElementById('password');
+    const email = emailInput.value;
+    const password = passwordInput.value;
     
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email, password })
         });
         
+        console.log('Response status:', response.status);
         if (response.ok) {
             const data = await response.json();
             currentUser = data.user;
             localStorage.setItem('token', data.token);
             updateCurrentUserUI();
             loginForm.reset();
-        } else {
-            alert('Invalid credentials');
-        }
+			
+            //account not found
+        } else if (response.status === 404) {
+            message('✗ User account does not exist. Please create or advise your admin first', 'error');
+            loginForm.reset();
+			emailInput.focus();
+			
+            //wrong account details
+        } else if (response.status === 401) {
+            message('⚠ Invalid Credentials. Please try again', 'warning');
+			passwordInput.value = '';
+			passwordInput.focus();
+			
+			//Inactive account
+        } else if (response.status === 403) {
+			message('✗ Your account is inactive. Contact your administrator', 'error');
+			
+			//Other errors
+		} else {
+			alert('⚠ Login failed. Please try again later', 'warning');
+		}
+		
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed. Server may not be running.');
+        alert('⚠ Login failed. Server may not be running.', 'warning');
     }
 }
 
-function showSignupSection(show) {
+export function showSignupSection(show) {
     document.getElementById('forgotPasswordSection').style.display = 'none';
     document.getElementById('resetPasswordSection').style.display = 'none';
     document.getElementById('signupSection').style.display = show ? 'block' : 'none';
 }
 
-async function handleSignup(e) {
+export async function handleSignup(e) {
     e.preventDefault();
 
     const name = document.getElementById('signupName').value;
@@ -275,7 +366,7 @@ async function handleSignup(e) {
         const data = await response.json();
         if (response.ok) {
             signupMessage.style.color = '#065f46';
-            signupMessage.textContent = 'Admin account created successfully. Redirecting...';
+            signupMessage.textContent = '✓ Admin account created successfully. Redirecting...';
             localStorage.setItem('token', data.token);
             currentUser = data.user;
             updateCurrentUserUI();
@@ -283,16 +374,16 @@ async function handleSignup(e) {
             loginForm.reset();
         } else {
             signupMessage.style.color = '#b91c1c';
-            signupMessage.textContent = data.error || 'Unable to create admin account';
+            signupMessage.textContent = data.error || '✗ Unable to create admin account';
         }
     } catch (error) {
         console.error('Signup error:', error);
         signupMessage.style.color = '#b91c1c';
-        signupMessage.textContent = 'Signup failed. Server may not be running.';
+        signupMessage.textContent = '⚠ Signup failed. Server may not be running.';
     }
 }
 
-function updateCurrentUserUI() {
+export function updateCurrentUserUI() {
     document.getElementById('employeeName').textContent = currentUser.name;
     navLogin.style.display = 'none';
     navLogout.style.display = 'block';
@@ -309,12 +400,13 @@ function updateCurrentUserUI() {
     }
     const companyNameElement = document.getElementById('companyName');
     if (companyNameElement) {
-        companyNameElement.textContent = currentUser.companyName || 'Unknown';
+        companyNameElement.textContent = (currentUser.companyName || 'Unknown')
+            .replace(/\.(?:co\.za|com)$/i, '');
     }
     localStorage.setItem('role', currentUser.role);
 }
 
-async function authFetch(url, options = {}) {
+export async function authFetch(url, options = {}) {
     const token = localStorage.getItem('token');
     const headers = {
         ...(options.headers || {}),
@@ -343,21 +435,23 @@ async function authFetch(url, options = {}) {
     }
 }
 
-async function loadCurrentUser() {
+export async function loadCurrentUser() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
         const response = await authFetch('/api/auth/me');
+        if (!response.ok) throw new Error('Failed to load current user');
+
         const data = await response.json();
         currentUser = data;
-        updateCurrentUserUI();
     } catch (error) {
-        console.warn('loadCurrentUser failed:', error);
+        console.warn('Loading the user failed:', error);
         localStorage.removeItem('token');
     }
 }
 
-function toggleForgotPassword(showReset) {
+//Logic for reseting passwords
+export function toggleForgotPassword(showReset) {
     const forgotSection = document.getElementById('forgotPasswordSection');
     const resetSection = document.getElementById('resetPasswordSection');
     const loginForm = document.getElementById('loginForm');
@@ -378,7 +472,7 @@ function toggleForgotPassword(showReset) {
     if (resetMessage) resetMessage.textContent = '';
 }
 
-async function handleForgotPassword(e) {
+export async function handleForgotPassword(e) {
     e.preventDefault();
     const email = document.getElementById('forgotEmail').value;
     const forgotMessage = document.getElementById('forgotPasswordMessage');
@@ -406,7 +500,7 @@ async function handleForgotPassword(e) {
     }
 }
 
-async function handleResetPassword(e) {
+export async function handleResetPassword(e) {
     e.preventDefault();
     const token = document.getElementById('resetToken').value;
     const password = document.getElementById('resetPassword').value;
@@ -438,7 +532,7 @@ async function handleResetPassword(e) {
 }
 
 // Handle Logout
-function handleLogout() {
+export function handleLogout() {
     currentUser = null;
     activeBreak = null;
     localStorage.removeItem('token');
@@ -459,7 +553,7 @@ function handleLogout() {
 }
 
 // Record Attendance
-async function recordAttendance(type) {
+export async function recordAttendance(type) {
     if (!currentUser) {
         alert('Please log in first');
         return false;
@@ -507,7 +601,7 @@ async function recordAttendance(type) {
 
 //change:
 // Add attendance record
-async function addAttendanceRecord(employeeId, type, timestamp, location, notes) {
+export async function addAttendanceRecord(employeeId, type, timestamp, location, notes) {
   const response = await authFetch('/api/attendance/admin/add', {
     method: 'POST',
     headers: {
@@ -520,20 +614,112 @@ async function addAttendanceRecord(employeeId, type, timestamp, location, notes)
 }
 
 // Edit attendance record
-async function editAttendanceRecord(recordId, updates) {
-  const response = await authFetch(`/api/attendance/admin/edit/${recordId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(updates)
-  });
-  const data = await response.json();
-  alert(data.message || 'Record updated');
+export async function editAttendanceRecord(recordId, updates) {
+    const response = await authFetch(`/api/attendance/admin/edit/${recordId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Record update failed');
+    }
+    alert(data.message || 'Record updated');
+    await loadAttendanceRecords();
 }
 
+async function editAttendanceFromRecord(recordId) {
+    try {
+        const response = await authFetch('/api/attendance/admin/all');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to load attendance records');
+
+        const record = (data.records || []).find(item => item._id === recordId);
+        if (!record) throw new Error('Attendance record not found');
+        await openAttendanceEditor([record]);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function editEmployeeAttendance(employeeId, employeeName) {
+    try {
+        const response = await authFetch('/api/attendance/admin/all');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to load attendance records');
+
+        const records = (data.records || []).filter(record =>
+            (record.employeeId?._id || record.employeeId?.id) === employeeId
+        );
+        if (!records.length) {
+            alert(`No attendance records found for ${employeeName}.`);
+            return;
+        }
+
+        await openAttendanceEditor(records, employeeName);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+function openAttendanceEditor(records, employeeName = 'Attendance record') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('attendanceEditModal');
+        const form = document.getElementById('attendanceEditForm');
+        const recordSelect = document.getElementById('attendanceEditRecord');
+        const typeInput = document.getElementById('attendanceEditType');
+        const timestampInput = document.getElementById('attendanceEditTimestamp');
+        const notesInput = document.getElementById('attendanceEditNotes');
+        const cancelButton = document.getElementById('attendanceEditCancel');
+
+        recordSelect.innerHTML = records.map((record) => `
+            <option value="${record._id}">${formatAttendanceType(record.type)} - ${new Date(record.timestamp).toLocaleString()}</option>
+        `).join('');
+
+        const updateFields = () => {
+            const record = records.find(item => item._id === recordSelect.value);
+            if (!record) return;
+            typeInput.value = record.type;
+            timestampInput.value = record.timestamp ? new Date(record.timestamp).toISOString().slice(0, 16) : '';
+            notesInput.value = record.notes || '';
+        };
+
+        const close = () => {
+            modal.hidden = true;
+            form.removeEventListener('submit', submit);
+            cancelButton.removeEventListener('click', cancel);
+            recordSelect.removeEventListener('change', updateFields);
+            resolve();
+        };
+        const cancel = () => close();
+        const submit = async (event) => {
+            event.preventDefault();
+            const record = records.find(item => item._id === recordSelect.value);
+            if (!record) return;
+            try {
+                await editAttendanceRecord(record._id, {
+                    type: typeInput.value,
+                    timestamp: new Date(timestampInput.value).toISOString(),
+                    notes: notesInput.value,
+                });
+                close();
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+
+        document.getElementById('attendanceEditTitle').textContent = `Edit ${employeeName}`;
+        updateFields();
+        recordSelect.addEventListener('change', updateFields);
+        form.addEventListener('submit', submit);
+        cancelButton.addEventListener('click', cancel);
+        modal.hidden = false;
+    });
+}
 // Delete attendance record: change end
-async function deleteAttendanceRecord(recordId) {
+export async function deleteAttendanceRecord(recordId) {
   const response = await authFetch(`/api/attendance/admin/delete/${recordId}`, {
     method: 'DELETE',
   });
@@ -542,7 +728,7 @@ async function deleteAttendanceRecord(recordId) {
 }
 
 // Show History Locally (when server is not available)
-function showHistoryLocally(record) {
+export function showHistoryLocally(record) {
     const historyList = document.getElementById('attendanceHistory');
     const item = document.createElement('div');
     item.className = 'history-item';
@@ -551,7 +737,7 @@ function showHistoryLocally(record) {
 }
 
 // Load Employee History
-async function loadEmployeeHistory() {
+export async function loadEmployeeHistory() {
     try {
         const response = await authFetch('/api/attendance/history');
         
@@ -574,7 +760,7 @@ async function loadEmployeeHistory() {
 }
 
 // Load Admin Data
-async function loadAdminData() {
+export async function loadAdminData() {
     loadEmployeeList();
     loadAttendanceRecords();
     loadAuditLog();
@@ -582,7 +768,7 @@ async function loadAdminData() {
 
 // Load Employee List
 let allEmployees = [];
-async function loadEmployeeList() {
+export async function loadEmployeeList() {
     try {
         const response = await authFetch('/api/employees');
         
@@ -596,7 +782,7 @@ async function loadEmployeeList() {
     }
 }
 
-function renderEmployeeList(employees) {
+export function renderEmployeeList(employees) {
     const employeeList = document.getElementById('employeeList');
     employeeList.innerHTML = '';
 
@@ -614,15 +800,16 @@ function renderEmployeeList(employees) {
             <p><strong>Email:</strong> ${emp.email}</p>
             <p><strong>Role:</strong> ${emp.role}</p>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
-                <button class="btn btn-secondary" onclick="viewEmployeeDetails('${employeeId}')">View</button>
-                <button class="btn btn-danger" onclick="deleteEmployee('${employeeId}')">Remove</button>
+                <button class="btn btn-secondary view-btn" data-id="${employeeId}">View</button>
+                <button class="btn btn-danger delete-btn" data-id="${employeeId}">Archive</button>
             </div>
         `;
         employeeList.appendChild(card);
     });
 }
 
-function handleEmployeeSearch(event) {
+// Handle Employee Search
+export function handleEmployeeSearch(event) {
     const query = event.target.value.toLowerCase().trim();
     if (!query) {
         renderEmployeeList(allEmployees);
@@ -637,14 +824,41 @@ function handleEmployeeSearch(event) {
     renderEmployeeList(filtered);
 }
 
-function viewEmployeeDetails(employeeId) {
+// View button for employee details
+export function viewEmployeeDetails(employeeId) {
     const employee = allEmployees.find(emp => emp._id === employeeId || emp.id === employeeId);
     if (!employee) return;
 
     alert(`Name: ${employee.name}\nEmail: ${employee.email}\nRole: ${employee.role}`);
+
+    if (confirm(`Edit an attendance record for ${employee.name}?`)) {
+        editEmployeeAttendance(employeeId, employee.name);
+    }
 }
 
-async function loadAttendanceRecords() {
+// Handle Delete Employee
+export async function deleteEmployee(employeeId) {
+    if (!confirm('Archive this employee? Their account will be removed from the active employee list and kept in Archives for restoration or permanent deletion.')) {
+        return;
+    }
+    
+    try {
+        const response = await authFetch(`/api/employees/${employeeId}`, {
+            method: 'DELETE',
+        });
+        
+        if (response.ok) {
+            alert('Employee archived successfully');
+            loadEmployeeList();
+        } else {
+            alert('Failed to remove employee');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+    }
+}
+
+export async function loadAttendanceRecords() {
     try {
         const dateFilter = document.getElementById('attendanceDateFilter')?.value;
         const query = dateFilter ? `?date=${encodeURIComponent(dateFilter)}` : '';
@@ -669,6 +883,7 @@ async function loadAttendanceRecords() {
                     <p><strong>Type:</strong> ${formatAttendanceType(record.type)}</p>
                     <p><strong>Time:</strong> ${record.timestamp ? new Date(record.timestamp).toLocaleString() : 'N/A'}</p>
                     <p><strong>Notes:</strong> ${record.notes || 'None'}</p>
+                    <button type="button" class="btn btn-secondary edit-attendance-btn" data-record-id="${record._id}">Edit</button>
                 `;
                 attendanceRecords.appendChild(entry);
             });
@@ -681,7 +896,7 @@ async function loadAttendanceRecords() {
 }
 
 // Load Audit Log
-async function loadAuditLog() {
+export async function loadAuditLog() {
     try {
         const month = auditMonthInput?.value;
         const query = month ? `?month=${encodeURIComponent(month)}` : '';
@@ -722,7 +937,8 @@ async function loadAuditLog() {
     }
 }
 
-async function triggerArchiveNow() {
+//Button for 'Archive Now' action
+export async function triggerArchiveNow() {
     try {
         const response = await authFetch('/api/employees/audit/archive/trigger', {
             method: 'POST',
@@ -742,7 +958,8 @@ async function triggerArchiveNow() {
     }
 }
 
-async function loadArchiveHistory() {
+//Load all Archive History
+export async function loadArchiveHistory() {
     try {
         const month = archiveMonthInput?.value;
         const query = month ? `?month=${encodeURIComponent(month)}` : '';
@@ -755,21 +972,21 @@ async function loadArchiveHistory() {
 
             if (logs.length === 0) {
                 archiveLog.innerHTML = '<div style="padding: 1rem; text-align: center; color: #666;">No archived logs found for this period</div>';
-                return;
+            } else {
+                logs.forEach(log => {
+                    const entry = document.createElement('div');
+                    entry.className = 'audit-entry';
+                    const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
+                    const name = log.userName || log.employeeId?.name || log.employeeId?.email || 'Unknown user';
+                    const userLabel = `${name}${log.userEmail ? ` (${log.userEmail})` : ''}`;
+                    entry.innerHTML = `
+                        <div class="timestamp">${timestamp}</div>
+                        <div class="action">${userLabel} - ${log.action} - ${log.details || 'No details'}</div>
+                    `;
+                    archiveLog.appendChild(entry);
+                });
             }
-
-            logs.forEach(log => {
-                const entry = document.createElement('div');
-                entry.className = 'audit-entry';
-                const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
-                const name = log.userName || log.employeeId?.name || log.employeeId?.email || 'Unknown user';
-                const userLabel = `${name}${log.userEmail ? ` (${log.userEmail})` : ''}`;
-                entry.innerHTML = `
-                    <div class="timestamp">${timestamp}</div>
-                    <div class="action">${userLabel} - ${log.action} - ${log.details || 'No details'}</div>
-                `;
-                archiveLog.appendChild(entry);
-            });
+            loadArchivedEmployees();
         } else {
             const errorData = await response.json();
             console.error('Archived audit log error:', errorData);
@@ -783,8 +1000,63 @@ async function loadArchiveHistory() {
     }
 }
 
+export async function loadArchivedEmployees() {
+    const container = document.getElementById('archivedEmployees');
+    if (!container) return;
+    try {
+        const response = await authFetch('/api/employees/archive/employees');
+        const employees = await response.json();
+        if (!response.ok) throw new Error(employees.error || 'Unable to load archived employees');
+        container.innerHTML = '';
+        if (!employees.length) {
+            container.innerHTML = '<div style="padding: 1rem; color: #666;">No archived employees</div>';
+            return;
+        }
+        employees.forEach(employee => {
+            const card = document.createElement('div');
+            card.className = 'employee-card';
+            card.innerHTML = `
+                <h4>${employee.name}</h4>
+                <p><strong>Email:</strong> ${employee.email}</p>
+                <p><strong>Archived:</strong> ${new Date(employee.archivedAt).toLocaleString()}</p>
+                <button class="btn btn-success restore-employee-btn" data-id="${employee._id}">Restore</button>
+                <button class="btn btn-danger permanent-delete-employee-btn" data-id="${employee._id}">Permanently Delete</button>
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        container.innerHTML = `<div style="padding: 1rem; color: red;">${error.message}</div>`;
+    }
+}
+
+export async function restoreEmployee(employeeId) {
+    try {
+        const response = await authFetch(`/api/employees/archive/employees/${employeeId}/restore`, { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Restore failed');
+        alert(data.message);
+        loadArchivedEmployees();
+        loadEmployeeList();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+export async function permanentlyDeleteArchivedEmployee(employeeId) {
+    if (!confirm('Permanently delete this archived employee? This cannot be undone.')) return;
+    try {
+        const response = await authFetch(`/api/employees/archive/employees/${employeeId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Permanent deletion failed');
+        alert(data.message);
+        loadArchivedEmployees();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
 // Handle Add Employee
-async function handleAddEmployee(e) {
+export async function handleAddEmployee(e) {
     e.preventDefault();
     
     const name = document.getElementById('newEmployeeName').value;
@@ -819,30 +1091,8 @@ async function handleAddEmployee(e) {
     }
 }
 
-// Delete Employee
-async function deleteEmployee(employeeId) {
-    if (!confirm('Are you sure you want to remove this employee?')) {
-        return;
-    }
-    
-    try {
-        const response = await authFetch(`/api/employees/${employeeId}`, {
-            method: 'DELETE',
-        });
-        
-        if (response.ok) {
-            alert('Employee removed successfully');
-            loadEmployeeList();
-        } else {
-            alert('Failed to remove employee');
-        }
-    } catch (error) {
-        console.error('Delete error:', error);
-    }
-}
-
 // Show Section
-function showSection(sectionName) {
+export function showSection(sectionName) {
     loginSection.classList.remove('active');
     employeeSection.classList.remove('active');
     adminSection.classList.remove('active');
@@ -864,7 +1114,7 @@ function showSection(sectionName) {
 }
 
 // Switch Tab
-function switchTab(tabName) {
+export function switchTab(tabName) {
     // Remove active from all tabs and content
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -887,13 +1137,14 @@ function switchTab(tabName) {
         loadAuditLog();
     } else if (tabName === 'archive') {
         loadArchiveHistory();
+        loadArchivedEmployees();
     } else if (tabName === 'employees') {
         loadEmployeeList();
     }
 }
 
 // Export Employees to Excel
-async function exportEmployeesToExcel() {
+export async function exportEmployeesToExcel() {
     if (!currentUser || currentUser.role !== 'admin') {
         alert('Only admins can export employees');
         return;
@@ -923,7 +1174,7 @@ async function exportEmployeesToExcel() {
 }
 
 // Export Audit Log to Excel
-async function exportAuditLogToExcel() {
+export async function exportAuditLogToExcel() {
     if (!currentUser || currentUser.role !== 'admin') {
         alert('Only admins can export audit logs');
         return;
@@ -952,4 +1203,10 @@ async function exportAuditLogToExcel() {
         console.error('Audit log export error:', error);
         alert(error.message || 'Failed to export audit log');
     }
+}
+
+//middleware error handling
+// Export functions for testing
+if (typeof module !== 'undefined' && defaultExport) {
+    defaultExport({ updateClock, updateBreakButtons, formatAttendanceType, toggleBreak, message, handleLogin, showSignupSection, handleSignup, updateCurrentUserUI, authFetch, loadCurrentUser, toggleForgotPassword, handleForgotPassword, handleResetPassword, handleLogout, recordAttendance, addAttendanceRecord, editAttendanceRecord, deleteAttendanceRecord, showHistoryLocally, loadEmployeeHistory, loadAdminData, loadEmployeeList, renderEmployeeList, handleEmployeeSearch, viewEmployeeDetails, deleteEmployee, loadAttendanceRecords, loadAuditLog, triggerArchiveNow, loadArchiveHistory, handleAddEmployee, showSection, switchTab, exportEmployeesToExcel, exportAuditLogToExcel });
 }

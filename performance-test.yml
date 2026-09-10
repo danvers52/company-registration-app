@@ -1,0 +1,42 @@
+config:
+  target: "{{ $processEnvironment.TARGET }}"
+  phases:
+    - duration: 60
+      arrivalRate: 10 #first accept 10 users per 60sec
+    - duration: 60
+      arrivalRate: 25 #secondly accept 25 users per 60sec
+    - duration: 60
+      arrivalRate: 50 #finally accept 50 users per 60sec
+  variables:
+    password: "Password{{ $loopCount }}"
+  ensure:
+    thresholds:
+      - http.response_time.p95 < 500   # 95th percentile latency must be < 500ms
+      - http.response_time.p99 < 1000  # 99th percentile latency must be < 1s
+      - http.requests.failed.rate < 0.02  # Error rate must be < 2%
+scenarios:
+  - name: Authenticated user flow
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "user{{ $loopCount }}@example.com"
+            password: "{{ password }}" #unique accounts and passwords per each account
+          capture:
+            - json: "$.token"
+              as: "jwt"
+
+      - get:
+          url: "/api/employees"
+          headers:
+            Authorization: "Bearer {{ jwt }}"
+
+      - get:
+          url: "/api/attendance"
+          headers:
+            Authorization: "Bearer {{ jwt }}"
+
+      - get:
+          url: "/api/history"
+          headers:
+            Authorization: "Bearer {{ jwt }}"
