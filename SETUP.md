@@ -10,7 +10,7 @@ Company Registration App/
 ├── public/
 │   ├── index.html          # Frontend HTML
 │   ├── styles.css          # CSS styling
-│   └── script.js           # Browser JavaScript
+│   └── script.js           # Browser JavaScript (ES module)
 ├── routes/
 │   ├── auth.js             # Authentication and user management
 │   ├── employees.js        # Employee and audit APIs
@@ -29,7 +29,6 @@ Company Registration App/
 │   └── auditArchival.js    # Audit archiving utilities
 ├── server.js               # Express server entry point
 ├── package.json            # Dependencies and scripts
-├── .env.example            # Example environment variables
 ├── SETUP.md                # This guide
 └── .gitignore              # Git ignore rules
 ```
@@ -58,13 +57,7 @@ Choose your setup method:
 npm install
 ```
 
-2. Copy the example environment file:
-
-```bash
-copy .env.example .env
-```
-
-3. Open `.env` and configure values:
+2. Create `.env` in the project root and configure values:
 
 ```env
 PORT=5000
@@ -86,16 +79,10 @@ NODE_ENV=development
 
 ## Running the App
 
-Start the server:
+Run the server entry point directly:
 
 ```bash
-npm start
-```
-
-For development with auto-reloading:
-
-```bash
-npm run dev
+node server.js
 ```
 
 Open the app in your browser:
@@ -126,7 +113,7 @@ This command:
 **app Service:**
 - Runs Node.js application on port 5000
 - Depends on MongoDB service
-- Uses environment variable `MONGO_URI=mongodb://mongo:27017/company-registration`
+- Uses environment variable `MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0`
 
 **mongo Service:**
 - Runs MongoDB 6 image
@@ -186,7 +173,7 @@ docker-compose logs --tail=50
 
 ```bash
 # Execute command in running container
-docker-compose exec app npm run dev
+docker-compose exec app node server.js
 
 # Shell access to app container
 docker-compose exec app sh
@@ -200,7 +187,7 @@ docker-compose build app
 The MongoDB connection is automatically configured in Docker:
 
 ```env
-MONGO_URI=mongodb://mongo:27017/company-registration
+MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
 ```
 
 You can override other environment variables by:
@@ -227,7 +214,7 @@ The application uses a multi-stage optimized Dockerfile:
 - **Base Image:** Node.js 18-alpine (lightweight)
 - **Working Directory:** `/app`
 - **Exposed Port:** 5000
-- **Entry Point:** `npm start`
+- **Entry Point:** `node server.js`
 
 The Dockerfile:
 
@@ -262,7 +249,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGO_URI=mongodb://mongo:27017/company-registration
+      - MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
   mongo:
     image: mongo:6
     ports:
@@ -373,9 +360,20 @@ db.employees.insertOne({
 
 ### Attendance
 - `POST /api/attendance/record` — record attendance
+- `POST /api/attendance/admin/add` — add attendance for an employee (admin only)
+- `PUT /api/attendance/admin/edit/:id` — edit attendance type, timestamp, location, or notes (admin only)
+- `DELETE /api/attendance/admin/delete/:id` — delete an attendance record (admin only)
 - `GET /api/attendance/history` — user attendance history
 - `GET /api/attendance/date/:date` — date-specific attendance
 - `GET /api/attendance/admin/all` — all company attendance (admin only)
+
+## Frontend Behavior
+
+- `public/index.html` loads `public/script.js` as an ES module because the browser script uses `export` declarations.
+- Employees can record only their own attendance. The authenticated JWT determines the employee ID used by the server.
+- To simulate two employees recording attendance concurrently, use separate browser profiles, separate browsers, or a normal window and an incognito/private window. Tabs in one browser profile share `localStorage`, so a second login replaces the first token.
+- Admins can edit records from the Attendance tab or from an employee's View action. The editor updates the type, timestamp, and notes while preserving the employee attached to the record.
+- The displayed company name removes a trailing `.com` or `.co.za`; the full company/domain value remains available internally for tenant isolation.
 
 ### Export
 - `GET /api/export/employees` — export employee list
@@ -427,7 +425,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 1. Install dependencies
 2. Configure `.env`
 3. Create initial admin account
-4. Start the server
+4. Start the server with `node server.js` or `docker-compose up`
 5. Open the app in browser
 6. Login and configure company users
 

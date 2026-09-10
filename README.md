@@ -5,11 +5,13 @@ A tenant-aware employee attendance and admin dashboard application built with No
 ## Features
 
 - Employee clock-in/clock-out tracking
+- Employee break tracking for tea, lunch, client visits, and safety drills
 - Attendance history and date filtering
-- Admin employee management
+- Admin employee management and attendance editing
 - Audit log tracking and export support
 - Archival support and management
 - Tenant-aware authorization with `Company` model
+- Company names display without `.com` or `.co.za` suffixes
 - Security hardening with Helmet, CORS, rate limiting, and input sanitization
 
 ## Getting Started
@@ -51,13 +53,7 @@ The app will be available at `http://localhost:5000`
 
 **For Local Development:**
 
-Copy the example environment file:
-
-```bash
-copy .env.example .env
-```
-
-Edit `.env` with your settings:
+Create `.env` in the project root and add:
 
 ```env
 PORT=5000
@@ -77,16 +73,10 @@ Docker Compose automatically sets the MongoDB connection string. Customize other
 
 **Local Development:**
 
-Start the server:
+Run the server entry point directly:
 
 ```bash
-npm start
-```
-
-For development with auto-reload:
-
-```bash
-npm run dev
+node server.js
 ```
 
 **Docker Setup:**
@@ -124,8 +114,6 @@ http://localhost:5000
 ## Scripts
 
 ### npm Scripts
-- `npm start` — start the server
-- `npm run dev` — start with nodemon
 - `npm test` — run tests with Jest
 
 ### Docker Commands
@@ -156,9 +144,19 @@ http://localhost:5000
 ### Attendance
 
 - `POST /api/attendance/record`
+- `POST /api/attendance/admin/add`
+- `PUT /api/attendance/admin/edit/:id`
+- `DELETE /api/attendance/admin/delete/:id`
 - `GET /api/attendance/history`
 - `GET /api/attendance/date/:date`
 - `GET /api/attendance/admin/all`
+
+### Attendance and Login Notes
+
+- Employees can record only their own attendance. The server identifies the employee from the authenticated JWT.
+- To test two employees at the same time, use separate browser profiles, browsers, or a normal window plus a private/incognito window. Browser `localStorage` is shared by tabs in the same profile, so logging in as a second employee replaces the first employee's token.
+- Admins can edit attendance records from the Attendance tab or from an employee's View action. The editor changes attendance type, timestamp, and notes without changing the record owner.
+- Company and tenant matching still use the full email domain internally; only the displayed company name removes `.com` and `.co.za`.
 
 ### Export
 
@@ -178,7 +176,7 @@ http://localhost:5000
 1. Review `SETUP.md` for complete installation and security guidance.
 2. Configure `.env` with your MongoDB connection and secrets.
 3. Create the initial admin user in MongoDB.
-4. Run `npm start` or `npm run dev`.
+4. Run `node server.js` or `docker-compose up`.
 5. Open `http://localhost:5000` in your browser.
 
 ## Support
