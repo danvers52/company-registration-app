@@ -26,8 +26,9 @@ import employeeRoutes from './routes/employees.js';
 import attendanceRoutes from './routes/attendance.js';
 import exportRoutes from './routes/export.js';
 
-//express app & parsing json
+//express app & parsing json -> proxy for render setup
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 
 // Security middleware
