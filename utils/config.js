@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const NODE_ENV = process.env.NODE_ENV?.trim() || 'production';
+const NODE_ENV = process.env.NODE_ENV?.trim() || 'development';
 const JWT_SECRET = process.env.JWT_SECRET?.trim();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN?.trim() || '24h';
 const MONGODB_URI = process.env.MONGODB_URI?.trim() || 'mongodb://mongo:27017/company-registration?replicaSet=rs0';
