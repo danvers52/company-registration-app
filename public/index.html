@@ -213,6 +213,43 @@
         </div>
     </div>
 
+    <div id="attendanceEditModal" class="modal" hidden>
+        <form id="attendanceEditForm" class="modal-content">
+            <h3 id="attendanceEditTitle">Edit Attendance</h3>
+            <div class="form-group">
+                <label for="attendanceEditRecord">Record:</label>
+                <select id="attendanceEditRecord" required></select>
+            </div>
+            <div class="form-group">
+                <label for="attendanceEditType">Type:</label>
+                <select id="attendanceEditType" required>
+                    <option value="clock-in">Clock In</option>
+                    <option value="clock-out">Clock Out</option>
+                    <option value="tea-break-out">Tea Break Out</option>
+                    <option value="tea-break-in">Tea Break In</option>
+                    <option value="lunch-break-out">Lunch Break Out</option>
+                    <option value="lunch-break-in">Lunch Break In</option>
+                    <option value="client-visit-out">Client Visit Out</option>
+                    <option value="client-visit-in">Client Visit In</option>
+                    <option value="safety-drill-out">Safety Drill Out</option>
+                    <option value="safety-drill-in">Safety Drill In</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="attendanceEditTimestamp">Timestamp:</label>
+                <input type="datetime-local" id="attendanceEditTimestamp" required>
+            </div>
+            <div class="form-group">
+                <label for="attendanceEditNotes">Notes:</label>
+                <textarea id="attendanceEditNotes" rows="3"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="attendanceEditCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </form>
+    </div>
+
     <script type="module" src="script.js"></script>
     <script src="vendor/xlsx.min.js"></script>
 </body>

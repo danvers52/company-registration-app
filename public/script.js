@@ -629,27 +629,7 @@ async function editAttendanceFromRecord(recordId) {
 
         const record = (data.records || []).find(item => item._id === recordId);
         if (!record) throw new Error('Attendance record not found');
-        await promptAndEditAttendance(record);
-    } catch (error) {
-        alert(error.message);
-    }
-}
-
-async function promptAndEditAttendance(record) {
-    const type = prompt(
-        'Attendance type:\nclock-in, clock-out, tea-break-out, tea-break-in, lunch-break-out, lunch-break-in, client-visit-out, client-visit-in, safety-drill-out, safety-drill-in',
-        record.type
-    );
-    if (type === null) return;
-
-    const timestamp = prompt('Timestamp (for example, 2026-09-10T09:00:00Z):', record.timestamp);
-    if (timestamp === null) return;
-
-    const notes = prompt('Notes:', record.notes || '');
-    if (notes === null) return;
-
-    try {
-        await editAttendanceRecord(record._id, { type, timestamp, notes });
+        await openAttendanceEditor([record]);
     } catch (error) {
         alert(error.message);
     }
@@ -669,19 +649,66 @@ async function editEmployeeAttendance(employeeId, employeeName) {
             return;
         }
 
-        const choices = records.map((record, index) =>
-            `${index + 1}. ${formatAttendanceType(record.type)} - ${new Date(record.timestamp).toLocaleString()}`
-        ).join('\n');
-        const selected = prompt(`Choose a record to edit for ${employeeName}:\n${choices}\nEnter its number:`);
-        const index = Number(selected) - 1;
-        if (!Number.isInteger(index) || !records[index]) return;
-
-        await promptAndEditAttendance(records[index]);
+        await openAttendanceEditor(records, employeeName);
     } catch (error) {
         alert(error.message);
     }
 }
 
+function openAttendanceEditor(records, employeeName = 'Attendance record') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('attendanceEditModal');
+        const form = document.getElementById('attendanceEditForm');
+        const recordSelect = document.getElementById('attendanceEditRecord');
+        const typeInput = document.getElementById('attendanceEditType');
+        const timestampInput = document.getElementById('attendanceEditTimestamp');
+        const notesInput = document.getElementById('attendanceEditNotes');
+        const cancelButton = document.getElementById('attendanceEditCancel');
+
+        recordSelect.innerHTML = records.map((record) => `
+            <option value="${record._id}">${formatAttendanceType(record.type)} - ${new Date(record.timestamp).toLocaleString()}</option>
+        `).join('');
+
+        const updateFields = () => {
+            const record = records.find(item => item._id === recordSelect.value);
+            if (!record) return;
+            typeInput.value = record.type;
+            timestampInput.value = record.timestamp ? new Date(record.timestamp).toISOString().slice(0, 16) : '';
+            notesInput.value = record.notes || '';
+        };
+
+        const close = () => {
+            modal.hidden = true;
+            form.removeEventListener('submit', submit);
+            cancelButton.removeEventListener('click', cancel);
+            recordSelect.removeEventListener('change', updateFields);
+            resolve();
+        };
+        const cancel = () => close();
+        const submit = async (event) => {
+            event.preventDefault();
+            const record = records.find(item => item._id === recordSelect.value);
+            if (!record) return;
+            try {
+                await editAttendanceRecord(record._id, {
+                    type: typeInput.value,
+                    timestamp: new Date(timestampInput.value).toISOString(),
+                    notes: notesInput.value,
+                });
+                close();
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+
+        document.getElementById('attendanceEditTitle').textContent = `Edit ${employeeName}`;
+        updateFields();
+        recordSelect.addEventListener('change', updateFields);
+        form.addEventListener('submit', submit);
+        cancelButton.addEventListener('click', cancel);
+        modal.hidden = false;
+    });
+}
 // Delete attendance record: change end
 export async function deleteAttendanceRecord(recordId) {
   const response = await authFetch(`/api/attendance/admin/delete/${recordId}`, {
@@ -1114,11 +1141,6 @@ export async function exportAuditLogToExcel() {
 }
 
 //middleware error handling
-app.use((err, req, res, next) => {
-    console.error(err); //internal log
-    res.status(500).json({ error: 'Internal Server Error' }); //user-friendly message
-});
-
 // Export functions for testing
 if (typeof module !== 'undefined' && defaultExport) {
     defaultExport({ updateClock, updateBreakButtons, formatAttendanceType, toggleBreak, message, handleLogin, showSignupSection, handleSignup, updateCurrentUserUI, authFetch, loadCurrentUser, toggleForgotPassword, handleForgotPassword, handleResetPassword, handleLogout, recordAttendance, addAttendanceRecord, editAttendanceRecord, deleteAttendanceRecord, showHistoryLocally, loadEmployeeHistory, loadAdminData, loadEmployeeList, renderEmployeeList, handleEmployeeSearch, viewEmployeeDetails, deleteEmployee, loadAttendanceRecords, loadAuditLog, triggerArchiveNow, loadArchiveHistory, handleAddEmployee, showSection, switchTab, exportEmployeesToExcel, exportAuditLogToExcel });
