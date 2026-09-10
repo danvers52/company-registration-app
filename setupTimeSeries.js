@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-registration')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/company-registration?replicaSet=rs0')
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => {
     console.error('MongoDB connection error:', err);
@@ -100,12 +100,12 @@ export async function setupTimeSeries() {
     await db.collection('employees').createIndex({ email: 1 }, { unique: true });
     console.log('✓ Created indexes for performance\n');
 
-    console.log('✅ Time-Series setup completed successfully!');
+    console.log('✓ Time-Series setup completed successfully!');
     console.log('\nYou can now run: npm start');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error setting up time-series:', error.message);
+    console.error('✗ Error setting up time-series:', error.message);
     process.exit(1);
   }
 }
