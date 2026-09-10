@@ -8,6 +8,7 @@ const ATTENDANCE_TYPES = new Set([
   'lunch-break-out', 'lunch-break-in',
   'client-visit-out', 'client-visit-in',
   'safety-drill-out', 'safety-drill-in',
+  'restore-employee',
 ]);
 const ROLES = new Set(['employee', 'admin']);
 

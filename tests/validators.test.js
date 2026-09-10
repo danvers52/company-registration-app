@@ -61,6 +61,10 @@ describe('NoSQL injection attempts', () => {
     expect(isNonEmptyString('hello')).toBe(true);
     expect(isNonEmptyString('')).toBe(false);
   });
+
+  it('accepts employee restoration as an attendance type', () => {
+    expect(isValidAttendanceType('restore-employee')).toBe(true);
+  });
 });
 
 // --- 3. File Upload Validation (middleware test) ---

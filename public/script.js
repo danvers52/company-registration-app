@@ -227,7 +227,8 @@ export function formatAttendanceType(type) {
         'client-visit-out': 'Client Visit Out',
         'client-visit-in': 'Client Visit In',
         'safety-drill-out': 'Safety Drill Out',
-        'safety-drill-in': 'Safety Drill In'
+        'safety-drill-in': 'Safety Drill In',
+        'restore-employee': 'Employee Restored'
     };
 
     return labels[type] || type;

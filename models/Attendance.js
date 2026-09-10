@@ -13,6 +13,7 @@ const attendanceSchema = new mongoose.Schema({
       'tea-break-out', 'tea-break-in', 'lunch-break-out', 'lunch-break-in',
       'client-visit-out', 'client-visit-in',
       'safety-drill-out', 'safety-drill-in',
+      'restore-employee',
     ],
     required: true,
   },

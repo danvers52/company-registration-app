@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import Employee from '../models/Employee.js';
 import ArchivedEmployee from '../models/ArchivedEmployee.js';
+import Attendance from '../models/Attendance.js';
 import AuditLog from '../models/AuditLog.js';
 import AuditLogArchive from '../models/AuditLogArchive.js';
 
@@ -293,6 +294,17 @@ router.post('/archive/employees/:id/restore', verifyToken, verifyAdmin, requireC
       createdAt: archived.createdAt,
       updatedAt: archived.updatedAt,
     }, { session });
+    await Attendance.create([{
+      employeeId: archived.originalEmployeeId,
+      type: 'restore-employee',
+      timestamp: new Date(),
+      notes: 'Employee restored from archive',
+    }], { session });
+    await AuditLog.create([{
+      employeeId: req.user.id,
+      action: 'restore-employee',
+      details: `Restored employee: ${archived.name}`,
+    }], { session });
     await ArchivedEmployee.deleteOne({ _id: archived._id }, { session });
     await session.commitTransaction();
     res.json({ message: 'Employee restored successfully' });
