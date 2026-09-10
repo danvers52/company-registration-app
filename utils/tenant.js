@@ -8,6 +8,10 @@ export function getEmailDomain(email) {
   return email?.trim().split('@')[1]?.toLowerCase();
 }
 
+export function getDisplayCompanyName(name) {
+  return name?.replace(/\.(?:co\.za|com)$/i, '') || 'Unknown';
+}
+
 export async function resolveCompanyByEmail(email) {
   const domain = getEmailDomain(email);
   if (!domain) return null;

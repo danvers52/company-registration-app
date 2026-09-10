@@ -9,7 +9,7 @@ const { jwtSecret, jwtExpiresIn } = config;
 
 import {isValidEmail, isValidPassword, isValidRole, isNonEmptyString, sendError} from '../utils/validators.js';
 
-import {getEmailDomain, resolveCompanyByEmail, ensureCompanyByEmail, requireCompanyForRequest} from '../utils/tenant.js';
+import {getEmailDomain, resolveCompanyByEmail, ensureCompanyByEmail, requireCompanyForRequest, getDisplayCompanyName} from '../utils/tenant.js';
 const router = express.Router();
 
 // Middleware to verify token
@@ -191,7 +191,7 @@ router.post('/signup', async (req, res) => {
         email: employee.email,
         role: employee.role,
         companyId: employee.company,
-        companyName: employeeCompany.name,
+        companyName: getDisplayCompanyName(employeeCompany.name),
       },
     });
   } catch (error) {
@@ -239,7 +239,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: jwtExpiresIn }
     );
 
-    const companyName = employee.company?.name || 'Unknown';
+    const companyName = getDisplayCompanyName(employee.company?.name);
 
     // Log action
     await AuditLog.create([{
@@ -374,7 +374,7 @@ router.get('/me', verifyToken, async (req, res) => {
       email: employee.email,
       role: employee.role,
       companyId: employee.company,
-      companyName: employee.company?.name || 'Unknown',
+      companyName: getDisplayCompanyName(employee.company?.name),
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

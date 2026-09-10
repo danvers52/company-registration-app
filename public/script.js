@@ -392,7 +392,8 @@ export function updateCurrentUserUI() {
     }
     const companyNameElement = document.getElementById('companyName');
     if (companyNameElement) {
-        companyNameElement.textContent = currentUser.companyName || 'Unknown';
+        companyNameElement.textContent = (currentUser.companyName || 'Unknown')
+            .replace(/\.(?:co\.za|com)$/i, '');
     }
     localStorage.setItem('role', currentUser.role);
 }
