@@ -261,18 +261,18 @@ export function message(text, type = 'error') {
 	
 	//Style based on type
 	if (type === 'success') {
-		msgBox.style.color = '#4bbc00'; 
+		msgBox.style.color = '#3b9300'; 
         msgBox.style.textShadow = '0 0 8px rgba(4, 154, 29, 0.48)'; // stronger glow
-        msgBox.style.backgroundColor = '#a3ffacce'; // subtle red tint behind text
+        msgBox.style.backgroundColor = '#b3fdbace'; // subtle green behind text
         msgBox.style.fontWeight = '600'; // bold text
         msgBox.style.padding = '6px 10px';
         msgBox.style.borderRadius = '5px';
         msgBox.style.transition = 'all 0.5s ease-in-out';
 		
 	} else if (type === 'warning'){
-		msgBox.style.color = '#e36200'; 
+		msgBox.style.color = '#c05300'; 
         msgBox.style.textShadow = '0 0 8px rgba(201, 87, 0, 0.6)'; // stronger glow
-        msgBox.style.backgroundColor = '#ffae6f'; // subtle red tint behind text
+        msgBox.style.backgroundColor = '#fdb57e'; // subtle orange behind text
         msgBox.style.fontWeight = '600'; // bold text
         msgBox.style.padding = '6px 10px';
         msgBox.style.borderRadius = '5px';
