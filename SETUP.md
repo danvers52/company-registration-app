@@ -61,8 +61,8 @@ npm install
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/company-registration
-JWT_SECRET=your-strong-random-secret-here
+MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
+JWT_SECRET=k2xD8qxpEV8PU9uYgBQq8YMeG8t3osoN
 JWT_EXPIRES_IN=24h
 CORS_ORIGIN=http://localhost:5000
 BCRYPT_SALT_ROUNDS=12
@@ -200,7 +200,7 @@ Example `.env` file:
 
 ```env
 NODE_ENV=production
-JWT_SECRET=your-strong-random-secret
+JWT_SECRET=k2xD8qxpEV8PU9uYgBQq8YMeG8t3osoN
 JWT_EXPIRES_IN=24h
 CORS_ORIGIN=http://localhost:5000
 BCRYPT_SALT_ROUNDS=12
