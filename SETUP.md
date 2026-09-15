@@ -1,55 +1,77 @@
-# Company Registration App — Setup & Security Guide
+# Company Registration App: Setup and Security Guide
 
 ## Overview
-This application is a tenant-aware attendance and employee management system. It uses Node.js, Express, MongoDB, JWT authentication, and a browser-based Admin/Employee frontend.
 
-## Project Structure
+This application provides tenant-aware employee attendance and administration through a Node.js/Express API, MongoDB persistence, JWT authentication, and a browser frontend. Company membership is resolved from the user's email domain and stored through the `Company` model.
+
+## Current Project Structure
 
 ```text
 Company Registration App/
-├── public/
-│   ├── index.html          # Frontend HTML
-│   ├── styles.css          # CSS styling
-│   └── script.js           # Browser JavaScript (ES module)
-├── routes/
-│   ├── auth.js             # Authentication and user management
-│   ├── employees.js        # Employee and audit APIs
-│   ├── attendance.js       # Attendance APIs
-│   └── export.js           # Excel export APIs
+├── .dockerignore
+├── .env.example                 # Development environment template
+├── .env.test                    # Jest test environment template
+├── .gitignore
+├── .vscode/                     # Workspace settings, if present
+├── Dockerfile                   # Node 18 Alpine image
+├── docker-compose.yml           # app, test, and replica-set MongoDB services
+├── jest.config.js               # Jest configuration
+├── jest.setup.js                # Test globals and dotenv setup
+├── package.json                 # Runtime, development, and npm scripts
+├── package-lock.json
+├── performance-test.yml         # Authenticated load-test scenario
+├── seedUsers.js                 # Seeds 50 performance-test users
+├── server.js                    # Express app, middleware, health check, scheduler
+├── setupTimeSeries.js           # Destructive optional MongoDB setup utility
+├── tsconfig.json
+├── README.md
+├── SETUP.md
 ├── models/
-│   ├── Employee.js         # Employee schema
-│   ├── Attendance.js       # Attendance schema
-│   ├── AuditLog.js         # Audit logs schema
-│   ├── AuditLogArchive.js  # Archived audit logs
-│   └── Company.js          # Tenant company schema
+│   ├── ArchivedEmployee.js      # Archived employee schema
+│   ├── Attendance.js            # Attendance and break records
+│   ├── AuditLog.js              # Active audit records
+│   ├── AuditLogArchive.js       # Archived audit records
+│   ├── Company.js               # Tenant/company schema
+│   └── Employee.js              # Employee/admin schema and password hashing
+├── routes/
+│   ├── attendance.js            # Attendance CRUD and history APIs
+│   ├── auth.js                  # Signup, login, reset, and session APIs
+│   ├── employees.js             # Employees, archive, and audit APIs
+│   └── export.js                # Excel export APIs
 ├── utils/
-│   ├── config.js           # Environment and security config
-│   ├── tenant.js           # Tenant resolution helpers
-│   ├── validators.js       # Request validation helpers
-│   └── auditArchival.js    # Audit archiving utilities
-├── server.js               # Express server entry point
-├── package.json            # Dependencies and scripts
-├── SETUP.md                # This guide
-└── .gitignore              # Git ignore rules
+│   ├── auditArchival.js         # Five-month audit archival and month queries
+│   ├── config.js                # Environment parsing and validation
+│   ├── tenant.js                # Company resolution and isolation helpers
+│   └── validators.js             # Request validation helpers
+├── public/
+│   ├── index.html               # Login, employee, and admin views
+│   ├── script.js                # Frontend API calls and UI behavior
+│   ├── styles.css
+│   └── vendor/xlsx.min.js       # Browser Excel export dependency
+└── tests/
+    ├── auditlog.test.js
+    ├── auth.integration.test.js
+    ├── concurrent.test.js
+    ├── employee.test.js
+    └── validators.test.js
 ```
 
 ## Prerequisites
 
-Choose your setup method:
+### Local development
 
-### Option 1: Local Development Setup
+- Node.js 18 or later
+- npm 10 or later
+- MongoDB with replica-set support, because the API uses transactions
 
-- Node.js 18+ installed
-- npm 10+ installed
-- MongoDB running locally or accessible via connection string
-
-### Option 2: Docker Setup (Recommended)
+### Docker
 
 - Docker 20.10 or later
 - Docker Compose 2.0 or later
-- No need for local Node.js or MongoDB installation
 
-## Installation
+Docker is recommended because its MongoDB service starts with replica set `rs0` and the app is configured to use it.
+
+## Local Installation
 
 1. Install dependencies:
 
@@ -57,392 +79,168 @@ Choose your setup method:
 npm install
 ```
 
-2. Create `.env` in the project root and configure values:
+2. Copy `.env.example` to `.env` and set real values. The important names are:
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
-JWT_SECRET=k2xD8qxpEV8PU9uYgBQq8YMeG8t3osoN
+MONGODB_URI=mongodb://localhost:27017/company-registration?replicaSet=rs0
+JWT_SECRET=replace-with-a-strong-secret
 JWT_EXPIRES_IN=24h
 CORS_ORIGIN=http://localhost:5000
 BCRYPT_SALT_ROUNDS=12
 NODE_ENV=development
 ```
 
-## Recommended Production Configuration
+`config.js` defaults `MONGODB_URI` to the Docker hostname, so local development should set it explicitly to `localhost`. Production requires a JWT secret of at least 32 characters. `BCRYPT_SALT_ROUNDS` must be at least 10.
 
-- Use a strong 32+ character `JWT_SECRET`
-- Set `NODE_ENV=production`
-- Use HTTPS and secure host configuration
-- Avoid committing `.env` to source control
-- Use a managed secrets store if available
-
-## Running the App
-
-Run the server entry point directly:
+3. Start MongoDB as a replica set, then run:
 
 ```bash
-node server.js
+npm start
 ```
 
-Open the app in your browser:
-
-```text
-http://localhost:5000
-```
-
-## Docker Setup & Deployment
-
-### Quick Start with Docker Compose
-
-The fastest way to get started:
+For automatic restart during development:
 
 ```bash
-docker-compose up
+npm run dev
 ```
 
-This command:
-- Builds the Node.js app container
-- Starts a MongoDB container
-- Sets up networking between services
-- Exposes the app on `http://localhost:5000`
-- Exposes MongoDB on `mongodb://localhost:27017`
+Visit `http://localhost:5000` and use **Admin Registration** to create the first admin for an email domain. A second admin for the same domain cannot be created through signup; admins create additional users from the dashboard.
 
-### Docker Compose Services
+## Docker Compose
 
-**app Service:**
-- Runs Node.js application on port 5000
-- Depends on MongoDB service
-- Uses environment variable `MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0`
-
-**mongo Service:**
-- Runs MongoDB 6 image
-- Persists data in containers (not preserved between `docker-compose down`)
-- Accessible at `mongodb://mongo:27017` from app container
-- Accessible at `mongodb://localhost:27017` from host machine
-
-### Common Docker Compose Commands
-
-**Start Services:**
+Start the full application:
 
 ```bash
-# Start in foreground (see logs)
-docker-compose up
-
-# Start in background
-docker-compose up -d
-
-# Rebuild images before starting
 docker-compose up --build
 ```
 
-**Stop Services:**
+Services:
+
+| Service | Purpose | Host port |
+| --- | --- | --- |
+| `app` | Node.js API and static frontend | `5000` |
+| `test` | Jest suite against the test database | none |
+| `mongo` | MongoDB 6 replica set `rs0` | `27017` |
+
+The app uses `mongodb://mongo:27017/company-registration?replicaSet=rs0`. MongoDB data is stored in the named `mongo-data` volume and survives `docker-compose down`.
 
 ```bash
-# Stop containers (preserve volumes)
-docker-compose stop
-
-# Stop and remove containers and networks
-docker-compose down
-
-# Stop and remove everything including volumes
-docker-compose down -v
+docker-compose up -d        # start in the background
+docker-compose logs -f app  # follow app logs
+docker-compose ps           # view service status
+docker-compose down         # stop services, preserve data
+docker-compose down -v      # stop services and delete data
+docker-compose up test      # run the Dockerized Jest service
 ```
 
-**View Status & Logs:**
-
-```bash
-# List running containers
-docker-compose ps
-
-# View logs from all services
-docker-compose logs
-
-# View logs from specific service
-docker-compose logs app
-docker-compose logs mongo
-
-# Follow logs in real-time
-docker-compose logs -f
-
-# View last 50 lines
-docker-compose logs --tail=50
-```
-
-**Manage Containers:**
-
-```bash
-# Execute command in running container
-docker-compose exec app node server.js
-
-# Shell access to app container
-docker-compose exec app sh
-
-# Rebuild specific service
-docker-compose build app
-```
-
-### Environment Variables for Docker
-
-The MongoDB connection is automatically configured in Docker:
-
-```env
-MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
-```
-
-You can override other environment variables by:
-
-1. Creating a `.env` file in the project root
-2. Modifying the `environment` section in `docker-compose.yml`
-3. Passing `-e` flags with `docker-compose run`
-
-Example `.env` file:
-
-```env
-NODE_ENV=production
-JWT_SECRET=k2xD8qxpEV8PU9uYgBQq8YMeG8t3osoN
-JWT_EXPIRES_IN=24h
-CORS_ORIGIN=http://localhost:5000
-BCRYPT_SALT_ROUNDS=12
-PORT=5000
-```
-
-### Dockerfile Details
-
-The application uses a multi-stage optimized Dockerfile:
-
-- **Base Image:** Node.js 18-alpine (lightweight)
-- **Working Directory:** `/app`
-- **Exposed Port:** 5000
-- **Entry Point:** `node server.js`
-
-The Dockerfile:
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 5000
-CMD ["npm", "start"]
-```
-
-### Port Mappings
-
-| Service | Container Port | Host Port | Purpose |
-|---------|----------------|-----------|---------|
-| app     | 5000           | 5000      | Web Application |
-| mongo   | 27017          | 27017     | MongoDB Database |
-
-### Data Persistence
-
-**Important:** By default, Docker containers don't persist data between runs. To persist MongoDB data, modify `docker-compose.yml`:
-
-```yaml
-version: '3'
-services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    depends_on:
-      - mongo
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/company-registration?replicaSet=rs0
-  mongo:
-    image: mongo:6
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
-```
-
-Then run:
-
-```bash
-docker-compose up
-```
-
-### Troubleshooting Docker
-
-**Port Already in Use:**
-
-```bash
-# Change port mappings in docker-compose.yml
-# For example, change "5000:5000" to "5001:5000"
-```
-
-**Container Crashes:**
-
-```bash
-# Check logs
-docker-compose logs app
-
-# Restart container
-docker-compose restart app
-```
-
-**MongoDB Connection Issues:**
-
-```bash
-# Ensure mongo service is running
-docker-compose ps
-
-# Rebuild and restart
-docker-compose down
-docker-compose up --build
-```
-
-**Clean Up Everything:**
-
-```bash
-# Remove all containers, networks, and volumes
-docker-compose down -v
-
-# Remove dangling images
-docker image prune
-```
-
-## Creating an Initial Admin Account
-
-If no admin account exists, create one using the 'Admin Registration' link on sign-up or 
-create one directly in MongoDB.
-
-### Example using Node.js or Mongo shell:
-
-```js
-const bcrypt = require('bcrypt');
-const hashedPassword = bcrypt.hashSync('admin123', 12);
-
-db.employees.insertOne({
-  name: 'Admin User',
-  email: 'admin@company.com',
-  password: hashedPassword,
-  role: 'admin',
-  company: null,
-  isActive: true,
-  createdAt: new Date(),
-  updatedAt: new Date()
-});
-```
-
-> Replace `admin123` with a secure password before using this in production.
+The Docker test service uses `company-registration-test` and waits for MongoDB to accept connections before running `npm test`. Override non-Mongo settings with a root `.env` file or the compose environment section.
 
 ## Environment Variables
 
-- `PORT` — server port
-- `MONGODB_URI` — MongoDB connection string
-- `JWT_SECRET` — JSON Web Token secret
-- `JWT_EXPIRES_IN` — token expiration (example: `24h`)
-- `CORS_ORIGIN` — allowed browser origin
-- `BCRYPT_SALT_ROUNDS` — bcrypt hash cost, minimum `12`
-- `NODE_ENV` — `development` or `production`
+| Variable | Required | Description |
+| --- | --- | --- |
+| `PORT` | No | HTTP port; defaults to `5000` |
+| `MONGODB_URI` | No | MongoDB connection string; Docker provides its own value |
+| `JWT_SECRET` | Production | JWT signing secret; production requires 32+ characters |
+| `JWT_EXPIRES_IN` | No | JWT lifetime, default `24h` |
+| `CORS_ORIGIN` | No | Allowed browser origin, default `http://localhost:5000` |
+| `BCRYPT_SALT_ROUNDS` | No | Password hashing cost, minimum `10`, example `12` |
+| `NODE_ENV` | No | `development`, `test`, or `production` |
 
-## API Endpoints
+Use `MONGODB_URI`, not `MONGO_URI`, when running tests outside Docker. `.env.test` should contain a test database URI and `NODE_ENV=test`; never point tests at a production database.
 
-### Authentication
-- `POST /api/auth/login` — login
-- `POST /api/auth/register` — register employee (admin only)
-- `GET /api/auth/me` — get current authenticated user
-- `POST /api/auth/logout` — logout
+## Data and Audit Behavior
 
-### Employee Management
-- `GET /api/employees` — list company employees (admin only)
-- `GET /api/employees/:id` — get employee by ID
-- `PUT /api/employees/:id` — update employee profile
-- `DELETE /api/employees/:id` — archive an employee (admin only)
-- `GET /api/employees/archive/employees` — list archived employees (admin only)
-- `POST /api/employees/archive/employees/:id/restore` — restore an archived employee (admin only)
-- `DELETE /api/employees/archive/employees/:id` — permanently delete an archived employee (admin only)
-- `GET /api/employees/audit` — active audit logs (admin only)
-- `GET /api/employees/audit/archive` — archived audit logs (admin only)
+- Employees and admins are scoped to a `Company` resolved from the email domain.
+- The employee list's **Archive** action moves the account to `ArchivedEmployee`; it does not immediately delete attendance or audit references.
+- Archived employees can be restored or permanently deleted by a same-company admin. Permanent deletion is irreversible.
+- Attendance supports clock-in/out, tea, lunch, client-visit, safety-drill, and restore-employee record types.
+- The API prevents duplicate attendance types per employee through a unique database index and transaction handling.
+- Audit logs are shown by month and automatically move to `AuditLogArchive` after five months. The scheduler checks daily, and admins can trigger a check from the Archive History tab or the manual archive endpoint.
+- Employee and audit exports are Excel workbooks and are rate-limited.
 
-### Attendance
-- `POST /api/attendance/record` — record attendance
-- `POST /api/attendance/admin/add` — add attendance for an employee (admin only)
-- `PUT /api/attendance/admin/edit/:id` — edit attendance type, timestamp, location, or notes (admin only)
-- `DELETE /api/attendance/admin/delete/:id` — delete an attendance record (admin only)
-- `GET /api/attendance/history` — user attendance history
-- `GET /api/attendance/date/:date` — date-specific attendance
-- `GET /api/attendance/admin/all` — all company attendance (admin only)
+## API and Security
 
-## Frontend Behavior
+Protected requests use `Authorization: Bearer <JWT>`. Admin endpoints additionally enforce the admin role and company boundary.
 
-- `public/index.html` loads `public/script.js` as an ES module because the browser script uses `export` declarations.
-- Employees can record only their own attendance. The authenticated JWT determines the employee ID used by the server.
-- To simulate two employees recording attendance concurrently, use separate browser profiles, separate browsers, or a normal window and an incognito/private window. Tabs in one browser profile share `localStorage`, so a second login replaces the first token.
-- Admins can edit records from the Attendance tab or from an employee's View action. The editor updates the type, timestamp, and notes while preserving the employee attached to the record.
-- The displayed company name removes a trailing `.com` or `.co.za`; the full company/domain value remains available internally for tenant isolation.
-- Removing an employee archives the account instead of deleting it immediately. Admins can restore it or permanently delete it from the Archive tab.
+Authentication endpoints:
 
-### Export
-- `GET /api/export/employees` — export employee list
-- `GET /api/export/audit` — export audit log
+- `POST /api/auth/signup`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
 
-## Security Features
+Employee and audit endpoints:
 
-This app includes:
+- `GET /api/employees`
+- `GET /api/employees/:id`
+- `PUT /api/employees/:id`
+- `DELETE /api/employees/:id`
+- `GET /api/employees/archive/employees`
+- `POST /api/employees/archive/employees/:id/restore`
+- `DELETE /api/employees/archive/employees/:id`
+- `GET /api/employees/audit?month=YYYY-MM`
+- `GET /api/employees/audit/archive?month=YYYY-MM`
+- `GET /api/employees/audit/check?email=...`
+- `POST /api/employees/audit/archive/trigger`
 
-- JWT authentication with configurable expiry
-- Bcrypt password hashing
-- Helmet HTTP headers
-- CORS origin restrictions
-- Rate limiting on auth and global routes
-- HTTP parameter pollution prevention
-- MongoDB query sanitization
-- Request body size limits
-- Tenant-aware authorization via `Company` model
+Attendance endpoints:
 
-## Testing
+- `POST /api/attendance/record`
+- `POST /api/attendance/admin/add`
+- `PUT /api/attendance/admin/edit/:id`
+- `DELETE /api/attendance/admin/delete/:id`
+- `GET /api/attendance/history`
+- `GET /api/attendance/date/:date`
+- `GET /api/attendance/admin/all?date=YYYY-MM-DD`
 
-Use Postman, Thunder Client, or curl.
+Exports and monitoring:
 
-Example login request:
+- `GET /api/export/employees`
+- `GET /api/export/audit?month=YYYY-MM`
+- `GET /api/health`
+
+Security middleware includes Helmet, CORS, global and route-specific rate limits, HPP protection, MongoDB query sanitization, JSON/urlencoded body limits, bcrypt password hashing, and production JWT validation. The health endpoint returns `200` when MongoDB is connected and `503` otherwise.
+
+## Testing and Optional Utilities
+
+Run the Jest suite locally with:
 
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@company.com","password":"admin123"}'
+npm test
 ```
+
+`performance-test.yml` is an Artillery-style load scenario. `seedUsers.js` inserts 50 users with `user1@example.com` through `user50@example.com`; use only against a disposable performance database and ensure those users have the required company data before exercising tenant-protected endpoints.
+
+`setupTimeSeries.js` is an optional, destructive database utility. It drops the `attendance` and `employees` collections before attempting to create a time-series attendance collection and seed accounts. It is not used by `npm start` or Docker Compose, and should not be run against an existing database without a backup and a compatibility review with the current Mongoose schemas.
 
 ## Troubleshooting
 
-### MongoDB Connection Error
-- Verify MongoDB is running
-- Confirm `MONGODB_URI` is correct
-- Ensure the connection string is valid
+### MongoDB connection or transaction errors
 
-### Port Already In Use
-- Change `PORT` in `.env`
-- Stop the conflicting process
+Confirm MongoDB is running as a replica set and that `MONGODB_URI` contains `replicaSet=rs0` where required. With Docker, check `docker-compose ps` and `docker-compose logs mongo`.
 
-### Token / Auth Failures
-- Verify `JWT_SECRET` matches between environments
-- Check that tokens are not expired
+### Port already in use
 
-## Next Steps
+Change `PORT` for local use, or change the host side of the compose mapping, for example `5001:5000`, then open `http://localhost:5001`.
 
-1. Install dependencies
-2. Configure `.env`
-3. Create initial admin account
-4. Start the server with `node server.js` or `docker-compose up`
-5. Open the app in browser
-6. Login and configure company users
+### Authentication or CORS failures
 
-## Future Enhancements
+Confirm `JWT_SECRET`, `JWT_EXPIRES_IN`, and `CORS_ORIGIN` are correct for the running environment. Log in again after changing a secret because existing tokens will no longer validate.
 
-- HTTPS enforcement in production
-- Refresh token support
-- Role-based permission expansion
-- Mobile-responsive UI improvements
-- Integration tests and CI validation
-- Email or SMS notifications
-- Biometric integration 
+### Two users in browser testing
 
-## Notes
+Use separate browser profiles, browsers, or a normal window plus an incognito/private window. Tabs in one profile share `localStorage`, so a second login replaces the first user's token.
 
-Keep this guide updated when configuration or security behavior changes. Use environment variables for all secrets and deploy with best-practice security settings.
+## Production Checklist
+
+- Use a managed MongoDB replica set and a backup policy.
+- Set a unique 32+ character `JWT_SECRET` through a secrets manager.
+- Set `NODE_ENV=production` and use HTTPS.
+- Restrict `CORS_ORIGIN` to the real frontend origin.
+- Replace the development password-reset response token with email delivery.
+- Keep `.env`, test credentials, and seeded accounts out of production.
